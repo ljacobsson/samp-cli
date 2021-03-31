@@ -20,6 +20,6 @@ Commands:
 ## Demo
 ![Demo](images/demo.gif)
 
-## Known issues
+## Known issues and limitations
 * Comments in YAML disappear when parsing the template
-* Some templates in the Serverless Patterns Collection have bugs and are unparseable
+* Only content form the template.yaml file will be imported. Any supporting files like lambda functions or openapi schemas will not be imported.
