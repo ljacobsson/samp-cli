@@ -2,7 +2,7 @@
 
 *Note: this is an early version of a CLI backed by an early version of a community driven resource; https://serverlessland.com/patterns/. There might be bugs*
 
-This tool lets you browse the content of the [Serverless Patterns Collection](https://serverlessland.com/patterns/) and inject patterns directly into your SAM template.
+This tool lets you browse the content of the [Serverless Patterns Collection](https://serverlessland.com/patterns/) and inject patterns directly into your SAM template. Support for both JSON and YAML.
 
 ## Usage
 ```
@@ -19,3 +19,7 @@ Commands:
 
 ## Demo
 ![Demo](images/demo.gif)
+
+## Known issues
+* Comments in YAML disappear when parsing the template
+* Some templates in the Serverless Patterns Collection have bugs and are unparseable
