@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 process.env.AWS_SDK_LOAD_CONFIG = 1;
-const AWS = require("aws-sdk");
 process.env.AWS_SDK_LOAD_CONFIG = 1;
 const program = require("commander");
 const package = require("./package.json");
