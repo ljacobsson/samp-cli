@@ -1,0 +1,37 @@
+{
+  "name": "sam-patterns-cli",
+  "version": "0.0.1",
+  "description": "Command line interface for quickly using patterns from https://github.com/aws-samples/serverless-patterns/",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhlabs/sam-patterns-cli.git"
+  },
+  "keywords": [
+    "aws",
+    "serverless",
+    "devtools"
+  ],
+  "author": "mhlabs",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mhlabs/sam-patterns-cli/issues"
+  },
+  "bin": {
+    "serverless-patterns": "index.js",
+    "sam-patterns": "index.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/mhlabs/sam-patterns-cli#readme",
+  "dependencies": {
+    "@octokit/rest": "^18.5.2",
+    "commander": "^7.2.0",
+    "inquirer": "^8.0.0",
+    "yaml-cfn": "^0.3.0"
+  }
+}
