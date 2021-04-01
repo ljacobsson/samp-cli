@@ -1,6 +1,6 @@
 {
   "name": "sam-patterns-cli",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Command line interface for quickly using patterns from https://github.com/aws-samples/serverless-patterns/",
   "main": "index.js",
   "scripts": {
@@ -29,9 +29,11 @@
   },
   "homepage": "https://github.com/mhlabs/sam-patterns-cli#readme",
   "dependencies": {
+    "@mhlabs/cfn-diagram": "^1.1.24",
     "@octokit/rest": "^18.5.2",
     "commander": "^7.2.0",
     "inquirer": "^8.0.0",
+    "open": "^7.4.2",
     "yaml-cfn": "^0.3.0"
   }
 }
