@@ -31,9 +31,6 @@ function sanitize(setting) {
   if (setting.root.length && setting.root[0] === "/") {
     setting.root = setting.root.substring(1);
   }
-  // if (setting.relativePath.length && setting.relativePath[0] !== "/") {
-  //   setting.relativePath = `/${setting.relativePath}`;
-  // }
 }
 
 async function getPatterns() {

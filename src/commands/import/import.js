@@ -1,6 +1,6 @@
 const inputUtil = require("../../shared/inputUtil");
 const parser = require("../../shared/parser");
-const githubUtil = require("../../shared/githubUtil")
+const githubUtil = require("../../shared/githubUtil");
 const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
 const fs = require("fs");
@@ -27,10 +27,13 @@ async function run(cmd) {
       templateString = await githubUtil.getContent(
         pattern.setting.owner,
         pattern.setting.repo,
-        `/${pattern.pattern.name}${pattern.setting.relativePath}/${fileName}`.replace(
-          /\/\//g,
-          "/"
-        )
+        `${
+          pattern.setting.root.length
+            ? pattern.setting.root + "/"
+            : pattern.setting.root
+        }${pattern.pattern.name}${
+          pattern.setting.relativePath
+        }/${fileName}`.replace(/\/\//g, "/")
       );
     } catch (err) {}
     if (templateString) {
@@ -89,11 +92,15 @@ async function run(cmd) {
   fs.writeFileSync(cmd.template, parser.stringify("own", ownTemplate));
 
   console.log(
-    `${cmd.template} updated with ${pattern.pattern.name} pattern. See ${pattern.setting.url.replace("#PATTERN_NAME#", pattern.pattern.name)} for more information`
+    `${cmd.template} updated with ${
+      pattern.pattern.name
+    } pattern. See ${pattern.setting.url.replace(
+      "#PATTERN_NAME#",
+      pattern.pattern.name
+    )} for more information`
   );
 }
 
 module.exports = {
   run,
 };
-

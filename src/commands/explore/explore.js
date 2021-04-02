@@ -18,14 +18,18 @@ async function run(cmd) {
     const pattern = await inputUtil.list("Select pattern", patterns);
     let templateString;
     for (const fileName of pattern.setting.fileNames) {
+      templateString = undefined;
       try {
         templateString = await githubUtil.getContent(
           pattern.setting.owner,
           pattern.setting.repo,
-          `/${pattern.pattern.name}${pattern.setting.relativePath}/${fileName}`.replace(
-            /\/\//g,
-            "/"
-          )
+          `${
+            pattern.setting.root.length
+              ? pattern.setting.root + "/"
+              : pattern.setting.root
+          }${pattern.pattern.name}${
+            pattern.setting.relativePath
+          }/${fileName}`.replace(/\/\//g, "/")
         );
       } catch (err) {}
       if (templateString) {
