@@ -5,6 +5,7 @@ const program = require("commander");
 const package = require("./package.json");
 require("./src/commands/import");
 require("./src/commands/explore");
+require("./src/commands/source");
 
 program.version(package.version, "-v, --vers", "output the current version");
 

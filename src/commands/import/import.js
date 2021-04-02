@@ -1,5 +1,6 @@
 const inputUtil = require("../../shared/inputUtil");
 const parser = require("../../shared/parser");
+const githubUtil = require("../../shared/githubUtil")
 const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
 const fs = require("fs");
@@ -7,8 +8,6 @@ const github = new Octokit({
   auth: `token ${process.env.GITHUB_TOKEN}`,
 });
 
-const owner = "aws-samples";
-const repo = "serverless-patterns";
 const cfnDia = require("@mhlabs/cfn-diagram/graph/Vis");
 async function run(cmd) {
   if (!fs.existsSync(cmd.template)) {
@@ -19,20 +18,33 @@ async function run(cmd) {
   }
   const ownTemplate = parser.parse("own", fs.readFileSync(cmd.template));
 
-  const repoRoot = await github.repos.getContent({ owner, repo });
-  const patterns = await repoRoot.data
-    .filter(
-      (p) =>
-        p.type === "dir" &&
-        /[a-zA-Z]/.test(p.name[0]) &&
-        !p.name.endsWith("-cdk")
-    )
-    .map((p) => {
-      return { name: p.name, value: p };
-    });
-  const pattern = await inputUtil.list("Select pattern", patterns);
+  const patterns = await githubUtil.getPatterns();
 
-  const templateString = await getContent(`/${pattern.name}/template.yaml`);
+  const pattern = await inputUtil.list("Select pattern", patterns);
+  let templateString;
+  for (const fileName of pattern.setting.fileNames) {
+    try {
+      templateString = await githubUtil.getContent(
+        pattern.setting.owner,
+        pattern.setting.repo,
+        `/${pattern.pattern.name}${pattern.setting.relativePath}/${fileName}`.replace(
+          /\/\//g,
+          "/"
+        )
+      );
+    } catch (err) {}
+    if (templateString) {
+      break;
+    }
+  }
+  if (!templateString) {
+    console.log(
+      "Could not find template file. Tried " +
+        pattern.setting.fileNames.join(", ")
+    );
+    return;
+  }
+
   const template = parser.parse("import", templateString);
 
   const sections = {
@@ -44,7 +56,7 @@ async function run(cmd) {
   const sectionList = [];
   for (const section of Object.keys(sections)) {
     if (sections[section]) {
-      sectionList.push(new Separator(`***${section}***`));
+      sectionList.push(new Separator(`*** ${section} ***`));
       sectionList.push(
         ...Object.keys(sections[section]).map((p) => {
           return { name: p, value: { name: p, section: section } };
@@ -55,7 +67,9 @@ async function run(cmd) {
   const blocks = await inputUtil.checkbox(
     "Select blocks to import",
     sectionList,
-    sectionList.filter(p=>p.value && p.value.section !== "Outputs").map(p=>p.value)
+    sectionList
+      .filter((p) => p.value && p.value.section !== "Outputs")
+      .map((p) => p.value)
   );
   for (const block of blocks) {
     ownTemplate[block.section] = ownTemplate[block.section] || {};
@@ -75,22 +89,11 @@ async function run(cmd) {
   fs.writeFileSync(cmd.template, parser.stringify("own", ownTemplate));
 
   console.log(
-    `${cmd.template} updated with ${pattern.name} pattern. See https://serverlessland.com/patterns/${pattern.name} for more information`
+    `${cmd.template} updated with ${pattern.pattern.name} pattern. See ${pattern.setting.url.replace("#PATTERN_NAME#", pattern.pattern.name)} for more information`
   );
 }
 
 module.exports = {
   run,
 };
-async function getContent(path) {
-  const templateFile = await github.repos.getContent({
-    owner,
-    repo,
-    path,
-  });
-  const templateString = Buffer.from(
-    templateFile.data.content,
-    "base64"
-  ).toString();
-  return templateString;
-}
+
