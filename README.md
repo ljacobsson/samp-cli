@@ -52,6 +52,7 @@ Example how to add Jeremy Daly's reference architectures as a source:
 ? Template filename(s): template.yaml,template.yml
 ? URL (use #PATTERN_NAME# as placeholder): https://jeremydaly.com/the-#PATTERN_NAME#-pattern
 ```
+The configuration gets stored in `~/.sam-patterns-cli/settings.json`
 
 If you create your own collection you need to follow this structure:
 ```
@@ -63,7 +64,7 @@ If you create your own collection you need to follow this structure:
   | ├── README.md
   │ └── template.yaml
   └── pattern-3
-  | ├── README.md
+    ├── README.md
     └── template.yaml
 ```
 
