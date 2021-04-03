@@ -27,7 +27,7 @@ async function run(cmd) {
     "Template filename(s):",
     "template.yaml,template.yml"
   )).split(",").map(p=>p.trim());
-  settings.url = await inputUtil.text("URL (use #PATTERN_NAME# as placeholder):", `https://github.com/${settings.owner}/${settings.repo}/tree/main/${settings.root}/#PATTERN_NAME#`.replace(/\/\//g, "/"));
+  settings.url = await inputUtil.text("URL (use #PATTERN_NAME# as placeholder):", `https://github.com/${settings.owner}/${settings.repo}/tree/main/${settings.root}/#PATTERN_NAME#`);
   settingsUtil.save(settings);
 }
 

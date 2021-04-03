@@ -3,12 +3,14 @@ const parser = require("../../shared/parser");
 const githubUtil = require("../../shared/githubUtil");
 const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
+const transformer = require("./transformer");
 const fs = require("fs");
 const github = new Octokit({
   auth: `token ${process.env.GITHUB_TOKEN}`,
 });
 
 const cfnDia = require("@mhlabs/cfn-diagram/graph/Vis");
+const { templates } = require("@mhlabs/cfn-diagram/shared/templateCache");
 async function run(cmd) {
   if (!fs.existsSync(cmd.template)) {
     console.log(
@@ -48,8 +50,8 @@ async function run(cmd) {
     return;
   }
 
-  const template = parser.parse("import", templateString);
-
+  let template = parser.parse("import", templateString);
+  template = await transformer.transform(template);
   const sections = {
     Parameters: template.Parameters,
     Globals: template.Globals,
@@ -76,16 +78,17 @@ async function run(cmd) {
   );
   for (const block of blocks) {
     ownTemplate[block.section] = ownTemplate[block.section] || {};
-
+    const name = block.name;
     if (ownTemplate[block.section][block.name]) {
       block.name = await inputUtil.text(
         `Naming conflict for ${block.name}. Please select a new name. Make sure to update it dependents to the new name`,
         `${block.name}_2`
       );
     }
+    console.log(block.name);
 
-    ownTemplate[block.section][block.name] =
-      template[block.section][block.name];
+    ownTemplate[block.section][block.name] = template[block.section][name];
+
     console.log(`Added ${block.name} under ${block.section}`);
   }
 
