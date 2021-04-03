@@ -56,7 +56,6 @@ async function getPatterns() {
         });
       patternsList.push(...patterns);
     } catch (err) {
-      console.log(err);
       console.log(
         `Could not find patterns for ${setting.owner}/${setting.repo}. Looked in https://github.com/${setting.owner}/${setting.repo}/tree/master/${setting.root}`
       );

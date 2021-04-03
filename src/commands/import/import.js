@@ -85,7 +85,6 @@ async function run(cmd) {
         `${block.name}_2`
       );
     }
-    console.log(block.name);
 
     ownTemplate[block.section][block.name] = template[block.section][name];
 
