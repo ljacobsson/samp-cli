@@ -120,7 +120,7 @@ Metadata:
 
 The input type `runtime-select` lets the user select a valid Lambda runtime. This metadata is automatically applied to all patterns, so there's no need to explicitly add it. If the user always writes code in a specific language they can export environment variable `SAM_PATTERNS_DEFAULT_RUNTIME` to a valid [Lambda runtime identifier](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)
 
-[Demo](images/demo3.gif)
+![Demo](images/demo3.gif)
 
 ## Known issues and limitations
 * Comments in YAML disappear when parsing the template
