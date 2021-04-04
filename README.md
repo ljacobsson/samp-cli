@@ -68,7 +68,61 @@ If you create your own collection you need to follow this structure:
     └── template.yaml
 ```
 
+## Customise pattern imports using placeholders and property manipulation
+Say you host a pattern that creates an SQS queue and a Lambda function and sets the queue as an event source:
+```
+AWSTemplateFormatVersion: 2010-09-09
+Transform:
+  - AWS::Serverless-2016-10-31
+Resources:
+  The_Consumer:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs14.x
+      CodeUri: src/
+      Handler: The_Consumer.handler
+      Timeout: 3
+      Events:
+        SQS:
+          Type: SQS
+          Properties: 
+            BatchSize: 10
+            Queue: !GetAtt The_Queue.Arn
+  The_Queue:
+    Type: AWS::SQS::Queue
+```
+When a user of this snippet imports it into their template they are likely to jump straight at renaming the resources to something that semantically describes the type of messages the queue is handling. Also, the runtime is likely to be something different.
+
+As a pattern producer you can help out with this by defining a Metadata object on the pattern template:
+```
+Metadata:
+  PatternTransform:
+    Placeholders:
+      - Placeholder: The_
+        Message: Message type
+    Properties:
+      - JSONPath: $.Resources.The_Consumer.Properties.Events.SQS.Properties.BatchSize
+        InputType: number
+        Message: Enter batch size
+      - JSONPath: $.Resources.The_Consumer.Properties.CodeUri
+        InputType: string
+        Message: Enter CodeUri
+```
+
+*`PatternTransform.Placeholders` (array)*
+* `Placeholder`: the string to be replaced
+* `Message`: A message to be displayed (optional)
+
+*`PatternTransform.Properties` (array)*
+* `JSONPath`: The [JSONPath](https://support.smartbear.com/alertsite/docs/monitors/api/endpoint/jsonpath.html) to the property to be modified
+* `Message`: A message to be displayed (optional)
+* `InputType`: The datatype. Currently supports `string`, `number` or `runtime-select`
+
+The input type `runtime-select` lets the user select a valid Lambda runtime. This metadata is automatically applied to all patterns, so there's no need to explicitly add it. If the user always writes code in a specific language they can export environment variable `SAM_PATTERNS_DEFAULT_RUNTIME` to a valid [Lambda runtime identifier](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)
+
+[Demo](images/demo3.gif)
+
 ## Known issues and limitations
 * Comments in YAML disappear when parsing the template
-* Only content form the template.yaml file will be imported. Any supporting files like lambda functions or openapi schemas will not be imported.
+* Only content form the template.yaml file will be imported. Any supporting files like lambda functions or openapi schemas will be skipped.
 * Only works with SAM templates

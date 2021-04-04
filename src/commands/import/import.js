@@ -4,21 +4,26 @@ const githubUtil = require("../../shared/githubUtil");
 const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
 const transformer = require("./transformer");
+const baseFile = require("./baseFile.json");
+const templateAnatomy = require("./templateAnatomy.json");
 const fs = require("fs");
-const github = new Octokit({
-  auth: `token ${process.env.GITHUB_TOKEN}`,
-});
 
-const cfnDia = require("@mhlabs/cfn-diagram/graph/Vis");
-const { templates } = require("@mhlabs/cfn-diagram/shared/templateCache");
+const templateType = "SAM"; // to allow for more template frameworks
 async function run(cmd) {
   if (!fs.existsSync(cmd.template)) {
     console.log(
       `Can't find ${cmd.template}. Use -t option to specify template filename`
     );
-    return;
+    const create = await inputUtil.prompt(`Create ${cmd.template}?`);
+    if (create) {
+      fs.writeFileSync(cmd.template, parser.stringify("yaml", baseFile));
+    } else {
+      return;
+    }
   }
+
   const ownTemplate = parser.parse("own", fs.readFileSync(cmd.template));
+  ownTemplate.Resources = ownTemplate.Resources || {};
 
   const patterns = await githubUtil.getPatterns();
 
@@ -51,6 +56,7 @@ async function run(cmd) {
   }
 
   let template = parser.parse("import", templateString);
+  setDefaultMetadata(template);
   template = await transformer.transform(template);
   const sections = {
     Parameters: template.Parameters,
@@ -90,8 +96,17 @@ async function run(cmd) {
 
     console.log(`Added ${block.name} under ${block.section}`);
   }
-
-  fs.writeFileSync(cmd.template, parser.stringify("own", ownTemplate));
+  const orderedTemplate = Object.keys(ownTemplate)
+    .sort(
+      (a, b) =>
+        templateAnatomy[templateType][a].order -
+        templateAnatomy[templateType][b].order
+    )
+    .reduce((obj, key) => {
+      obj[key] = ownTemplate[key];
+      return obj;
+    }, {});  
+  fs.writeFileSync(cmd.template, parser.stringify("own", orderedTemplate));
 
   console.log(
     `${cmd.template} updated with ${
@@ -106,3 +121,25 @@ async function run(cmd) {
 module.exports = {
   run,
 };
+function setDefaultMetadata(template) {  
+  template.Metadata = template.Metadata || { PatternTransform: {} };
+  template.Metadata.PatternTransform = template.Metadata.PatternTransform || {
+    Properties: [],
+  };
+  template.Metadata.PatternTransform.Properties =
+    template.Metadata.PatternTransform.Properties || [];
+  template.Metadata.PatternTransform.Properties.unshift({
+    JSONPath: "$.Globals.Function.Runtime",
+    InputType: "runtime-select",
+  });
+  for (const resource of Object.keys(template.Resources).filter((p) => ["AWS::Serverless::Function", "AWS::Lambda::Function"].includes(
+    template.Resources[p].Type
+  )
+  )) {
+    template.Metadata.PatternTransform.Properties.unshift({
+      JSONPath: "$.Resources." + resource + ".Properties.Runtime",
+      InputType: "runtime-select",
+    });
+  }
+}
+

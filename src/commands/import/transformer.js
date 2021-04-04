@@ -1,5 +1,7 @@
 const inputUtil = require("../../shared/inputUtil");
 const jp = require("jsonpath");
+const runtimes = require("./runtimes.json");
+const { Separator } = require("inquirer");
 
 async function transform(template) {
   const metadata = template.Metadata;
@@ -17,7 +19,7 @@ async function placeholderTransforms(template) {
 
   let templateString = JSON.stringify(template);
   for (const property of metadata.PatternTransform.Placeholders || []) {
-    const value = await inputUtil.text(
+    const value = await inputUtil.text(property.Message || 
       `Placeholder value for ${property.Placeholder}:`
     );
     templateString = templateString.replaceAll(property.Placeholder, value);
@@ -27,19 +29,21 @@ async function placeholderTransforms(template) {
 async function propertyTransforms(template) {
   const metadata = template.Metadata;
   for (const property of metadata.PatternTransform.Properties || []) {
+    if (!jp.query(template, property.JSONPath).length)
+        continue
     let defaultValue, value;
     switch (property.InputType) {
       case "number":
         defaultValue = jp.query(template, property.JSONPath);
-        console.log("Set value for " + property.JSONPath);
         value = parseInt(
           await inputUtil.text(
-            `${property.Message}:`,
+            `${property.Message || "Set value for " + property.JSONPath}:`,
             defaultValue.length ? defaultValue[0] : undefined
           )
         );
 
         break;
+      case "string":
       case "text":
         defaultValue = jp.query(template, property.JSONPath);
         value = await inputUtil.text(
@@ -48,31 +52,29 @@ async function propertyTransforms(template) {
         );
         break;
       case "runtime-select":
-        value = await inputUtil.list(
-          "Select Lambda runtime",
-          [
-            "nodejs10.x",
-            "nodejs12.x",
-            "nodejs14.x",
-            "python3.8",
-            "python3.7",
-            "python3.6",
-            "python2.7",
-            "ruby2.7",
-            "ruby2.5",
-            "java11",
-            "java8.al2",
-            "java8",
-            "go1.x",
-            "dotnetcore3.1",
-            "dotnetcore2.1",
-          ].sort()
-        );
+        value =
+          process.env.SAM_PATTERNS_DEFAULT_RUNTIME ||
+          (await inputUtil.list(
+            `Select Lambda runtime for ${JSONPathToFrieldlyName(
+              property.JSONPath
+            )}.`,
+            [
+              ...runtimes.filter((p) => p.latest),
+              new Separator("*** Older versions ***"),
+              ...runtimes.filter((p) => !p.latest),
+            ]
+          ));
         break;
     }
-    jp.value(template, property.JSONPath, value);
+    if (value) jp.value(template, property.JSONPath, value);
   }
   return template;
+}
+
+function JSONPathToFrieldlyName(jsonPath) {
+  const split = jsonPath.split(".");
+  if (split[1] === "Globals") return "Globals";
+  else return "function " + split[2];
 }
 
 module.exports = {

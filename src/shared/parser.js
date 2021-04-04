@@ -1,5 +1,7 @@
 const yamlCfn = require("yaml-cfn");
-let format = {};
+let format = {
+  yaml: "yaml",
+};
 function parse(identifier, str) {
   try {
     const parsed = JSON.parse(str);
@@ -13,10 +15,11 @@ function parse(identifier, str) {
 }
 function stringify(identifier, obj) {
   if (format[identifier] === "json") return JSON.stringify(obj, null, 2);
-  if (format[identifier] === "yaml") return yamlCfn.yamlDump(obj).replace(/!<(.+?)>/g, "$1");
+  if (format[identifier] === "yaml")
+    return yamlCfn.yamlDump(obj).replace(/!<(.+?)>/g, "$1");
 }
 
 module.exports = {
   parse,
-  stringify
+  stringify,
 };
