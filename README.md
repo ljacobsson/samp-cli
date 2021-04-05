@@ -41,7 +41,7 @@ Options:
 ![Demo](images/demo2.gif)
 
 ### sam-patterns source
-Lets you add more sources. This could be public repositores, such as Jermey Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
+Lets you add more sources. This could be public repositories, such as Jeremy Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
 
 Example how to add Jeremy Daly's reference architectures as a source:
 ```
@@ -83,22 +83,23 @@ We've identified that `OrderPutFunction` and `OrderTable` together make up a reu
 
 ![Demo](images/share-select-components.png)
 
-We select the components making up our pattern and hit enter
+We select the components making up our pattern and hit <enter>.
 
-Next, we want to make the pattern generic so the developer importing it can customise it their way. In this case we created the pattern from an stack dealing with 'order' items. The next user of this pattern might work on a stack bound to 'products'
+Next, we want to make the pattern generic so the developer importing it can customise it their way. In this case we created the pattern from an stack dealing with 'order' items. The next user of this pattern might work on a stack bound to 'products'.
 
 ![Demo](images/share-select-dynamic-value.png)
 
-From a quick look at the resources we can see a pattern tha tthey both start with `Order`. The rest of their names is generic and is referring to the resource type, so we select `Order`
+From a quick look at the resources we can see a pattern that they both start with `Order`. The rest of their names are generic and is referring to the resource type, so we select `Order`.
 
-Now we're prompted to name the placeholder for 'Order'. Here is a godo idea to use something unique and not a short string like 'My'. This is because the import command will make a naive find/replace on the placeholder name.
+Now we're prompted to name the placeholder for 'Order'. Here is a good idea to use something unique and not a short string like 'My'. This is because the import command will make a naive find/replace on the placeholder name.
 
-Next we're asked to enter a string prompting the user to set the value. You can hit enter for the default string `Set value for 'MyItem' placeholder`
+Next we're asked to enter a string prompting the user to set the value. You can hit <enter> for the default string `Set value for 'MyItem' placeholder.`
 
 We want to change some default values of some properties or make some values customisable for the user during import. Here we get prompted with a flattened list of the components we've chosen.
+
 ![Demo](images/share-modify-properties.gif)
 
-Once done, hit `Done`, select a a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [sam-patterns source](https://github.com/mhlabs/sam-patterns-cli#sam-patterns-source) on how to link repositories.
+Once done, hit `Done`, select a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [sam-patterns source](https://github.com/mhlabs/sam-patterns-cli#sam-patterns-source) on how to link repositories.
 
 The new pattern has now been pushed and is ready to be used by someone else using `sam-patterns import`
 ![Demo](images/import-example.gif)
@@ -155,11 +156,11 @@ Metadata:
 * `Message`: A message to be displayed (optional)
 * `InputType`: The datatype. Currently supports `string`, `number` or `runtime-select`
 
-The input type `runtime-select` lets the user select a valid Lambda runtime. This metadata is automatically applied to all patterns, so there's no need to explicitly add it. If the user always writes code in a specific language they can export environment variable `SAM_PATTERNS_DEFAULT_RUNTIME` to a valid [Lambda runtime identifier](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)
+The input type `runtime-select` lets the user select a valid Lambda runtime. This metadata is automatically applied to all patterns, so there's no need to explicitly add it. If the user always writes code in a specific language they can export environment variable `SAM_PATTERNS_DEFAULT_RUNTIME` to a valid [Lambda runtime identifier](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html).
 
 ![Demo](images/demo3.gif)
 
 ## Known issues and limitations
 * Comments in YAML disappear when parsing the template
-* Only content form the template.yaml file will be imported. Any supporting files like lambda functions or openapi schemas will be skipped.
+* Only content from the template.yaml file will be imported. Any supporting files like lambda functions or openapi schemas will be skipped.
 * Only works with SAM templates
