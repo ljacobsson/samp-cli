@@ -1,0 +1,14 @@
+{
+  "SAM": {
+    "AWSTemplateFormatVersion": { "order": 0 },
+    "Transform": { "order": 1 },
+    "Globals": { "order": 2 },
+    "Description": { "order": 3 },
+    "Metadata": { "order": 4, "sharable": true },
+    "Parameters": { "order": 5, "sharable": true },
+    "Mappings": { "order": 6, "sharable": true },
+    "Conditions": { "order": 7, "sharable": true },
+    "Resources": { "order": 8, "sharable": true },
+    "Outputs": { "order": 9, "sharable": true }
+  }
+}

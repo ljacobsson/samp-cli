@@ -5,7 +5,7 @@ const { Separator } = require("inquirer");
 
 async function transform(template) {
   const metadata = template.Metadata;
-  if (!metadata || !metadata.PatternTransform) {
+  if (!metadata || !metadata.PatternTransform) {    
     return template;
   }
   console.log("Applying transforms...");

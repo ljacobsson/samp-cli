@@ -68,6 +68,37 @@ If you create your own collection you need to follow this structure:
     └── template.yaml
 ```
 
+### sam-patterns share
+Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.
+
+#### Example usage
+In this example we have a stack with the following resources:
+* OrderPutFunction [AWS::Serverless::Function]
+* OrderTable [AWS::DynamoDB::Table]
+* MySnsTopic [AWS::SNS::Topic]
+* EventRule [AWS::Events::Rule]
+* EventBridgeToToSnsPolicy [AWS::SNS::TopicPolicy]
+
+We've identified that `OrderPutFunction` and `OrderTable` together make up a reusable pattern that we want to share, so we run `sam-patterns share`:
+![Demo](images/share-select-components.png)
+We select the components making up our pattern and hit enter
+
+Next, we want to make the pattern generic so the developer importing it can customise it their way. In this case we created the pattern from an stack dealing with 'order' items. The next user of this pattern might work on a stack bound to 'products'
+![Demo](images/share-select-dynamic-value.png)
+From a quick look at the resources we can see a pattern tha tthey both start with `Order`. The rest of their names is generic and is referring to the resource type, so we select `Order`
+
+Now we're prompted to name the placeholder for 'Order'. Here is a godo idea to use something unique and not a short string like 'My'. This is because the import command will make a naive find/replace on the placeholder name.
+
+Next we're asked to enter a string prompting the user to set the value. You can hit enter for the default string `Set value for 'MyItem' placeholder`
+
+We want to change some default values of some properties or make some values customisable for the user during import. Here we get prompted with a flattened list of the components we've chosen.
+![Demo](images/share-modify-properties.gif)
+
+Once done, hit `Done`, select a a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [sam-patterns source](https://github.com/mhlabs/sam-patterns-cli#sam-patterns-source) on how to link repositories.
+
+The new pattern has now been pushed and is ready to be used by someone else using `sam-patterns import`
+
+
 ## Customise pattern imports using placeholders and property manipulation
 Say you host a pattern that creates an SQS queue and a Lambda function and sets the queue as an event source:
 ```

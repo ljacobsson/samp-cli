@@ -42,7 +42,11 @@ async function list(message, items) {
 }
 
 async function checkbox(message, items, defaults) {
-  return await choices(message, items, "checkbox", defaults);
+  let list = [];
+  do {
+    list = await choices(message, items, "checkbox", defaults);
+  } while (list.length === 0);
+  return list;
 }
 
 async function prompt(message) {

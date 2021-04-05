@@ -4,8 +4,8 @@ const githubUtil = require("../../shared/githubUtil");
 const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
 const transformer = require("./transformer");
-const baseFile = require("./baseFile.json");
-const templateAnatomy = require("./templateAnatomy.json");
+const baseFile = require("../../shared/baseFile.json");
+const templateAnatomy = require("../../shared/templateAnatomy.json");
 const fs = require("fs");
 
 const templateType = "SAM"; // to allow for more template frameworks
