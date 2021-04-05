@@ -80,11 +80,15 @@ In this example we have a stack with the following resources:
 * EventBridgeToToSnsPolicy [AWS::SNS::TopicPolicy]
 
 We've identified that `OrderPutFunction` and `OrderTable` together make up a reusable pattern that we want to share, so we run `sam-patterns share`:
+
 ![Demo](images/share-select-components.png)
+
 We select the components making up our pattern and hit enter
 
 Next, we want to make the pattern generic so the developer importing it can customise it their way. In this case we created the pattern from an stack dealing with 'order' items. The next user of this pattern might work on a stack bound to 'products'
+
 ![Demo](images/share-select-dynamic-value.png)
+
 From a quick look at the resources we can see a pattern tha tthey both start with `Order`. The rest of their names is generic and is referring to the resource type, so we select `Order`
 
 Now we're prompted to name the placeholder for 'Order'. Here is a godo idea to use something unique and not a short string like 'My'. This is because the import command will make a naive find/replace on the placeholder name.
