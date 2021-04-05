@@ -101,7 +101,9 @@ We want to change some default values of some properties or make some values cus
 Once done, hit `Done`, select a a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [sam-patterns source](https://github.com/mhlabs/sam-patterns-cli#sam-patterns-source) on how to link repositories.
 
 The new pattern has now been pushed and is ready to be used by someone else using `sam-patterns import`
+![Demo](images/import-example.gif)
 
+*NOTE* If you create patterns that aren't specific to your business use cases, please consider sharing them with the community over at [Serverless Pattern Collection](https://serverlessland.com/patterns/)
 
 ## Customise pattern imports using placeholders and property manipulation
 Say you host a pattern that creates an SQS queue and a Lambda function and sets the queue as an event source:

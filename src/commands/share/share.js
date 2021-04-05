@@ -68,7 +68,7 @@ async function run(cmd) {
     const placeholderName = await inputUtil.text(`Name placeholder for ${dynamic}`, dynamic);
     const message = await inputUtil.text("Set prompt for user:", `Set value for '${placeholderName}' placeholder`, `Set value for ${placeholderName}`)
     sharedTemplate = JSON.parse(JSON.stringify(sharedTemplate).replace(new RegExp(dynamic, "g"), placeholderName));
-    metadata.PatternTransform.Placeholders.push({Placeholder: "The_", message});
+    metadata.PatternTransform.Placeholders.push({Placeholder: placeholderName, message});
     resources = resources.map(p=>p.replace(new RegExp(dynamic, "g"), placeholderName));
   }
 
