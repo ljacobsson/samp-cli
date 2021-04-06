@@ -53,32 +53,52 @@ async function run(cmd) {
   };
   let resources = Object.keys(sharedTemplate.Resources);
 
-  for(const resourceIndex in resources) {
+  for (const resourceIndex in resources) {
     const resource = resources[resourceIndex];
-    const words = resource.split(/(?=[A-Z])/);     
+    const words = resource.split(/(?=[A-Z])/);
     const list = ["No change needed"];
-    let string = ""
-    for(const word of words) {
+    let string = "";
+    for (const word of words) {
       string += word;
       list.push(string);
     }
-    const dynamic = await inputUtil.list(`Select dynamic value for ${resource}`, list);
-    if (dynamic === "No change needed")
-      continue;
-    const placeholderName = await inputUtil.text(`Name placeholder for ${dynamic}`, dynamic);
-    const message = await inputUtil.text("Set prompt for user:", `Set value for '${placeholderName}' placeholder`, `Set value for ${placeholderName}`)
-    sharedTemplate = JSON.parse(JSON.stringify(sharedTemplate).replace(new RegExp(dynamic, "g"), placeholderName));
-    metadata.PatternTransform.Placeholders.push({Placeholder: placeholderName, message});
-    resources = resources.map(p=>p.replace(new RegExp(dynamic, "g"), placeholderName));
+    const dynamic = await inputUtil.list(
+      `Select dynamic value for ${resource}`,
+      list
+    );
+    if (dynamic === "No change needed") continue;
+    const placeholderName = await inputUtil.text(
+      `Name placeholder for ${dynamic}`,
+      dynamic
+    );
+    const message = await inputUtil.text(
+      "Set prompt for user:",
+      `Set value for '${placeholderName}' placeholder`,
+      `Set value for ${placeholderName}`
+    );
+    sharedTemplate = JSON.parse(
+      JSON.stringify(sharedTemplate).replace(
+        new RegExp(dynamic, "g"),
+        placeholderName
+      )
+    );
+    metadata.PatternTransform.Placeholders.push({
+      Placeholder: placeholderName,
+      message,
+    });
+    resources = resources.map((p) =>
+      p.replace(new RegExp(dynamic, "g"), placeholderName)
+    );
   }
-
+  const customizables = [];
   do {
-    const paths = flatten(sharedTemplate);
-    item = await inputUtil.list("Select item to modify", [
-      ...Object.keys(paths).map((p) => {
-        return { name: `${p}: ${paths[p]}`, value: p };
-      }),
+    const flattened = flatten(sharedTemplate);
+    const paths = yamleize(flattened, customizables);
+    item = await inputUtil.list2("Select item to modify", [
+      ...paths,
+      new Separator("---"),
       "Done",
+      new Separator("---"),
     ]);
     if (item === "Done") break;
     const action = await inputUtil.list("Select action", [
@@ -87,21 +107,21 @@ async function run(cmd) {
       "Delete",
     ]);
     if (action === "Delete") {
-      delete paths[item];
+      delete flattened[item.path];
     }
     if (action === "Make customisable") {
       const message = await inputUtil.text("Prompt message");
+      customizables.push(item.path);
       metadata.PatternTransform.Properties.push({
         JSONPath: "$." + item,
         Message: message,
-        InputType: typeof paths[item],
+        InputType: typeof flattened[item.path],
       });
     }
     if (action === "Set default value") {
-      paths[item] = await inputUtil.text("Set new value", paths[item]);
+      flattened[item.path] = await inputUtil.text("Set new value", flattened[item.path]);
     }
-
-    sharedTemplate = unflatten(paths);
+    sharedTemplate = unflatten(flattened);
   } while (true);
 
   sharedTemplate.Metadata = metadata;
@@ -173,6 +193,29 @@ function resourceShortName(type) {
   }
 }
 
+function yamleize(flattened, customizables) {
+  const list = [];
+  const usedPaths = [];
+  for (const row of Object.keys(flattened)) {
+    const split = row.split(".");
+    const propertyName = split.slice(-1)[0];
+    for (let i = 0; i < split.length - 1; i++) {
+      const path = split.slice(0, i + 1).join(".");
+      if (!usedPaths.includes(path)) {
+        list.push(new Separator("  ".repeat(i) + split[i]));
+        usedPaths.push(path);
+      }
+    }
+    list.push({
+      name:
+        "  ".repeat(split.length - 1) + propertyName + ": " + flattened[row] + (customizables.includes(row) ? " [✎ ]" : ""),
+      value: { path: row, value: flattened[row] },
+    });
+  }
+  return list;
+}
+
 module.exports = {
   run,
+  flattenAndIndent: yamleize,
 };

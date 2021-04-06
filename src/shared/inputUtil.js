@@ -12,6 +12,7 @@ async function choices(message, items, type, defaults) {
       choices: items,
       message: message,
       default: defaults,
+      pageSize: 15,
       source: function (answersYet, input) {
         if (!input) {
           return items;
@@ -40,6 +41,9 @@ async function text(message, defaultValue) {
 async function list(message, items) {
   return await choices(message, items, "autocomplete");
 }
+async function list2(message, items) {
+  return await choices(message, items, "list");
+}
 
 async function checkbox(message, items, defaults) {
   let list = [];
@@ -62,6 +66,7 @@ async function prompt(message) {
 
 module.exports = {
   list,
+  list2,
   checkbox,
   text,
   prompt,
