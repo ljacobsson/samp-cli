@@ -27,7 +27,7 @@ async function run(cmd) {
 
   const patterns = await githubUtil.getPatterns();
 
-  const pattern = await inputUtil.list("Select pattern", patterns);
+  const pattern = await inputUtil.autocomplete("Select pattern", patterns);
   let templateString;
   for (const fileName of pattern.setting.fileNames) {
     try {

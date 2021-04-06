@@ -30,6 +30,7 @@ async function propertyTransforms(template) {
   const metadata = template.Metadata;
   for (const property of metadata.PatternTransform.Properties || []) {
     try {
+      
       if (!jp.query(template, property.JSONPath).length) continue;
       let defaultValue, value;
       switch (property.InputType) {
@@ -54,7 +55,7 @@ async function propertyTransforms(template) {
         case "runtime-select":
           value =
             process.env.SAM_PATTERNS_DEFAULT_RUNTIME ||
-            (await inputUtil.list(
+            (await inputUtil.autocomplete(
               `Select Lambda runtime for ${JSONPathToFrieldlyName(
                 property.JSONPath
               )}.`,

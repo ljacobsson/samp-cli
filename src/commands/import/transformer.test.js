@@ -1,5 +1,17 @@
 const transformer = require("./transformer");
 const inquirer = require("inquirer");
+const jp = require("jsonpath");
+test("Fix dashed field name", async () => {
+  const obj = {
+    inner: {
+      "detail-type": "abc",
+    },
+  };
+
+  const value = jp.query(obj, '$["detail-type"]');
+
+  console.log("value", value);
+});
 
 test("Test transform", async () => {
   inquirer.prompt = (questions) => Promise.resolve({ text: "test" });

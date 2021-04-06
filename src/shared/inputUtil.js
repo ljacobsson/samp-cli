@@ -4,7 +4,7 @@ inquirer.registerPrompt(
   require("inquirer-autocomplete-prompt")
 );
 
-async function choices(message, items, type, defaults) {
+async function choices(message, items, type, defaults, pageSize = 5) {
   return (
     await inquirer.prompt({
       type: type,
@@ -12,7 +12,7 @@ async function choices(message, items, type, defaults) {
       choices: items,
       message: message,
       default: defaults,
-      pageSize: 15,
+      pageSize: pageSize,
       source: function (answersYet, input) {
         if (!input) {
           return items;
@@ -38,11 +38,12 @@ async function text(message, defaultValue) {
     })
   ).text;
 }
-async function list(message, items) {
-  return await choices(message, items, "autocomplete");
+async function autocomplete(message, items) {
+  return await choices(message, items, "autocomplete", null, 7);
 }
-async function list2(message, items) {
-  return await choices(message, items, "list");
+
+async function list(message, items) {
+  return await choices(message, items, "list", null, 15);
 }
 
 async function checkbox(message, items, defaults) {
@@ -65,8 +66,8 @@ async function prompt(message) {
 }
 
 module.exports = {
+  autocomplete,
   list,
-  list2,
   checkbox,
   text,
   prompt,

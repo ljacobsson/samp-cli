@@ -62,7 +62,7 @@ async function run(cmd) {
       string += word;
       list.push(string);
     }
-    const dynamic = await inputUtil.list(
+    const dynamic = await inputUtil.autocomplete(
       `Select dynamic value for ${resource}`,
       list
     );
@@ -94,14 +94,14 @@ async function run(cmd) {
   do {
     const flattened = flatten(sharedTemplate);
     const paths = yamleize(flattened, customizables);
-    item = await inputUtil.list2("Select item to modify", [
+    item = await inputUtil.list("Select item to modify", [
       ...paths,
       new Separator("---"),
       "Done",
       new Separator("---"),
     ]);
     if (item === "Done") break;
-    const action = await inputUtil.list("Select action", [
+    const action = await inputUtil.autocomplete("Select action", [
       "Set default value",
       "Make customisable",
       "Delete",
@@ -113,13 +113,22 @@ async function run(cmd) {
       const message = await inputUtil.text("Prompt message");
       customizables.push(item.path);
       metadata.PatternTransform.Properties.push({
-        JSONPath: "$." + item,
+        JSONPath:
+          "$." +
+          item.path
+            .split(".")
+            .map((p) => (p.includes("-") ? `["${p}"]` : p))
+            .join(".")
+            .replace(/\.\[/g, "["),
         Message: message,
         InputType: typeof flattened[item.path],
       });
     }
     if (action === "Set default value") {
-      flattened[item.path] = await inputUtil.text("Set new value", flattened[item.path]);
+      flattened[item.path] = await inputUtil.text(
+        "Set new value",
+        flattened[item.path]
+      );
     }
     sharedTemplate = unflatten(flattened);
   } while (true);
@@ -144,7 +153,7 @@ async function run(cmd) {
   );
 
   const sources = settingsUtil.get();
-  const repo = await inputUtil.list(
+  const repo = await inputUtil.autocomplete(
     "Select repository",
     sources.map((p) => {
       return { name: `${p.owner}/${p.repo}`, value: p };
@@ -208,7 +217,11 @@ function yamleize(flattened, customizables) {
     }
     list.push({
       name:
-        "  ".repeat(split.length - 1) + propertyName + ": " + flattened[row] + (customizables.includes(row) ? " [✎ ]" : ""),
+        "  ".repeat(split.length - 1) +
+        propertyName +
+        ": " +
+        flattened[row] +
+        (customizables.includes(row) ? " [✎ ]" : ""),
       value: { path: row, value: flattened[row] },
     });
   }

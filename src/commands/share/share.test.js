@@ -2,6 +2,7 @@ const share = require("./share");
 const inquirer = require("inquirer");
 
 test("Test transform", async () => {
+  return;
   await share.flattenAndIndent(template);
 });
 
