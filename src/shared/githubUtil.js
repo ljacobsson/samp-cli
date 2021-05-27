@@ -79,19 +79,25 @@ async function getContent(owner, repo, path) {
   return templateString;
 }
 
-async function putContent(org, repo, branch, file, content) {
+async function putContent(org, repo, branch, file, content, addReadme) {
   // gets commit's AND its tree's SHA
   if (file[0] === "/") file = file.substring(1);
   const split = file.split("/");
   const readmeStub = `# ${split.slice(-2)[0]}`;
   split.pop();
-  const readmeFile = `${split.join("/")}/README.md`;
+  let pathsForBlobs;
+  if (addReadme) {
+    const readmeFile = `${split.join("/")}/README.md`;
+    filesBlobs = await Promise.all([
+      createBlob(github, org, repo, content),
+      createBlob(github, org, repo, readmeStub),
+    ]);
+    pathsForBlobs = [file, readmeFile];
+  } else {
+    filesBlobs = await Promise.all([createBlob(github, org, repo, content)]);
+    pathsForBlobs = [file];
+  }
   const currentCommit = await getCurrentCommit(github, org, repo, branch);
-  const filesBlobs = await Promise.all([
-    createBlob(github, org, repo, content),
-    createBlob(github, org, repo, readmeStub),
-  ]);
-  const pathsForBlobs = [file, readmeFile];
   const newTree = await createNewTree(
     github,
     org,

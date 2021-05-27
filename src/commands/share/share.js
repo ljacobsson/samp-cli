@@ -1,12 +1,14 @@
 const inputUtil = require("../../shared/inputUtil");
 const githubUtil = require("../../shared/githubUtil");
 const settingsUtil = require("../../shared/settingsUtil");
+const lambdaHandlerParser = require("../../shared/lambdaHandlerParser");
 const templateAnatomy = require("../../shared/templateAnatomy.json");
 const baseTemplate = require("../../shared/baseFile.json");
 const parser = require("../../shared/parser");
 const flatten = require("flat");
 const fs = require("fs");
 const path = require("path");
+const runtimes = require("../../shared/runtimes.json");
 
 const { Separator } = require("inquirer");
 const { unflatten } = require("flat");
@@ -52,7 +54,7 @@ async function run(cmd) {
     },
   };
   let resources = Object.keys(sharedTemplate.Resources);
-
+  const sharedFunctionHandlers = {};
   for (const resourceIndex in resources) {
     const resource = resources[resourceIndex];
     const words = resource.split(/(?=[A-Z])/);
@@ -66,29 +68,47 @@ async function run(cmd) {
       `Select dynamic value for ${resource}`,
       list
     );
-    if (dynamic === "No change needed") continue;
-    const placeholderName = await inputUtil.text(
-      `Name placeholder for ${dynamic}`,
-      dynamic
-    );
-    const message = await inputUtil.text(
-      "Set prompt for user:",
-      `Set value for '${placeholderName}' placeholder`,
-      `Set value for ${placeholderName}`
-    );
-    sharedTemplate = JSON.parse(
-      JSON.stringify(sharedTemplate).replace(
-        new RegExp(dynamic, "g"),
-        placeholderName
-      )
-    );
-    metadata.PatternTransform.Placeholders.push({
-      Placeholder: placeholderName,
-      message,
-    });
-    resources = resources.map((p) =>
-      p.replace(new RegExp(dynamic, "g"), placeholderName)
-    );
+    if (dynamic !== "No change needed") {
+      const placeholderName = await inputUtil.text(
+        `Name placeholder for ${dynamic}`,
+        dynamic
+      );
+      const message = await inputUtil.text(
+        "Set prompt for user:",
+        `Set value for '${placeholderName}' placeholder`,
+        `Set value for ${placeholderName}`
+      );
+
+      sharedTemplate = JSON.parse(
+        JSON.stringify(sharedTemplate).replace(
+          new RegExp(dynamic, "g"),
+          placeholderName
+        )
+      );
+      metadata.PatternTransform.Placeholders.push({
+        Placeholder: placeholderName,
+        message,
+      });
+      resources = resources.map((p) =>
+        p.replace(new RegExp(dynamic, "g"), placeholderName)
+      );
+    }
+    const props = sharedTemplate.Resources[resource].Properties;    
+    if (
+      runtimes.filter(p=>p.name === (props.Runtime || sharedTemplate.Globals.Function.Runtime))[0]
+        .sharable &&
+      sharedTemplate.Resources[resource].Type === "AWS::Serverless::Function"
+    ) {
+      const shareCode = await inputUtil.prompt(
+        `Share function code? (${resource})`
+      );
+      if (shareCode) {
+        sharedFunctionHandlers[resource] = lambdaHandlerParser.buildFileName(
+          template.Globals,
+          props
+        );
+      }
+    }
   }
   const customizables = [];
   do {
@@ -166,13 +186,30 @@ async function run(cmd) {
       repo.repo,
       repo.branch,
       path.join(repo.root, name, repo.relativePath, repo.fileNames[0]),
-      parser.stringify("yaml", sharedTemplate)
+      parser.stringify("yaml", sharedTemplate),
+      true
     );
+    for (const funcCode of Object.keys(sharedFunctionHandlers)) {
+      const code = fs.readFileSync(sharedFunctionHandlers[funcCode]).toString();
+
+      await githubUtil.putContent(
+        repo.owner,
+        repo.repo,
+        repo.branch,
+        path.join(
+          repo.root,
+          name,
+          repo.relativePath,
+          sharedFunctionHandlers[funcCode]
+        ),
+        code
+      );
+    }
     console.log(
       `Pattern pushed. Please consider describing the pattern in the README: https://github.com/${repo.owner}/${repo.repo}/edit/${repo.branch}${repo.root}${name}${repo.relativePath}README.md`
     );
   } catch (err) {
-    console.log(err.message);
+    console.log(err.message, err);
     console.log(
       "Make sure your GITHUB_TOKEN has sufficient permissions to push to this repository"
     );

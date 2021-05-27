@@ -1,12 +1,13 @@
 const inputUtil = require("../../shared/inputUtil");
 const parser = require("../../shared/parser");
 const githubUtil = require("../../shared/githubUtil");
-const { Octokit } = require("@octokit/rest");
 const { Separator } = require("inquirer");
 const transformer = require("./transformer");
 const baseFile = require("../../shared/baseFile.json");
 const templateAnatomy = require("../../shared/templateAnatomy.json");
+const lambdaHandlerParser = require("../../shared/lambdaHandlerParser");
 const fs = require("fs");
+const path = require("path");
 
 const templateType = "SAM"; // to allow for more template frameworks
 async function run(cmd) {
@@ -82,6 +83,7 @@ async function run(cmd) {
       .filter((p) => p.value && p.value.section !== "Outputs")
       .map((p) => p.value)
   );
+  let getCode;
   for (const block of blocks) {
     ownTemplate[block.section] = ownTemplate[block.section] || {};
     const name = block.name;
@@ -93,6 +95,47 @@ async function run(cmd) {
     }
 
     ownTemplate[block.section][block.name] = template[block.section][name];
+    if (template[block.section][name].Type === "AWS::Serverless::Function") {
+      const functionProps = {
+        ...((template.Globals && template.Globals.Function) || {}),
+        ...template[block.section][name].Properties,
+      };
+      getCode =
+        getCode ||
+        (await inputUtil.prompt(
+          `Import function code (${functionProps.Runtime})?`
+        ));
+      if (getCode) {
+        const lambdaFilePath = `${
+          pattern.setting.root.length
+            ? pattern.setting.root + "/"
+            : pattern.setting.root
+        }${pattern.pattern.name}${
+          pattern.setting.relativePath
+        }${lambdaHandlerParser.buildFileName(template.Globals, functionProps)}`;
+        try {
+          let lambdaFile = await githubUtil.getContent(
+            pattern.setting.owner,
+            pattern.setting.repo,
+            lambdaFilePath
+          );
+          let lambdaDiskPath = lambdaFilePath.split("/").slice(1).join("/");
+          const lambdaDir = lambdaDiskPath.split("/").slice(0, -1).join("/");
+          fs.mkdirSync(lambdaDir, {
+            recursive: true,
+          });
+          if (fs.existsSync(lambdaDiskPath)) {
+            const newFileName = await inputUtil.text(
+              `${lambdaDiskPath} already exists. Please enter another filename: ${lambdaDir}/`
+            );
+            lambdaDiskPath = `${lambdaDir}/${newFileName}`;
+          }
+          fs.writeFileSync(lambdaDiskPath, lambdaFile);
+        } catch (err) {
+          console.error("Failed to download function: " + err.message);    
+        }
+      }
+    }
 
     console.log(`Added ${block.name} under ${block.section}`);
   }
@@ -105,7 +148,7 @@ async function run(cmd) {
     .reduce((obj, key) => {
       obj[key] = ownTemplate[key];
       return obj;
-    }, {});  
+    }, {});
   fs.writeFileSync(cmd.template, parser.stringify("own", orderedTemplate));
 
   console.log(
@@ -121,7 +164,7 @@ async function run(cmd) {
 module.exports = {
   run,
 };
-function setDefaultMetadata(template) {  
+function setDefaultMetadata(template) {
   template.Metadata = template.Metadata || { PatternTransform: {} };
   template.Metadata.PatternTransform = template.Metadata.PatternTransform || {
     Properties: [],
@@ -132,9 +175,10 @@ function setDefaultMetadata(template) {
     JSONPath: "$.Globals.Function.Runtime",
     InputType: "runtime-select",
   });
-  for (const resource of Object.keys(template.Resources).filter((p) => ["AWS::Serverless::Function", "AWS::Lambda::Function"].includes(
-    template.Resources[p].Type
-  )
+  for (const resource of Object.keys(template.Resources).filter((p) =>
+    ["AWS::Serverless::Function", "AWS::Lambda::Function"].includes(
+      template.Resources[p].Type
+    )
   )) {
     template.Metadata.PatternTransform.Properties.unshift({
       JSONPath: "$.Resources." + resource + ".Properties.Runtime",
@@ -142,4 +186,3 @@ function setDefaultMetadata(template) {
     });
   }
 }
-

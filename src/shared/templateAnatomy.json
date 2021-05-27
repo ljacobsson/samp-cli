@@ -2,7 +2,7 @@
   "SAM": {
     "AWSTemplateFormatVersion": { "order": 0 },
     "Transform": { "order": 1 },
-    "Globals": { "order": 2 },
+    "Globals": { "order": 2, "sharable": true },
     "Description": { "order": 3 },
     "Metadata": { "order": 4, "sharable": true },
     "Parameters": { "order": 5, "sharable": true },

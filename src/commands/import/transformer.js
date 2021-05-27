@@ -1,6 +1,6 @@
 const inputUtil = require("../../shared/inputUtil");
 const jp = require("jsonpath");
-const runtimes = require("./runtimes.json");
+const runtimes = require("../../shared/runtimes.json");
 const { Separator } = require("inquirer");
 
 async function transform(template) {
