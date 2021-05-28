@@ -95,7 +95,7 @@ async function run(cmd) {
     }
     const props = sharedTemplate.Resources[resource].Properties;    
     if (
-      runtimes.filter(p=>p.name === (props.Runtime || sharedTemplate.Globals.Function.Runtime))[0]
+      runtimes.filter(p=>p.name === (props.Runtime || template.Globals.Function.Runtime))[0]
         .sharable &&
       sharedTemplate.Resources[resource].Type === "AWS::Serverless::Function"
     ) {
