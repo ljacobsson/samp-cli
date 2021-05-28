@@ -1,0 +1,90 @@
+[
+  {
+    "name": "nodejs10.x",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "nodejs12.x",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "nodejs14.x",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "latest": true,
+    "sharable": true
+  },
+  {
+    "name": "python3.8",
+    "extension": ".py",
+    "handlerFormat": "filename.handler",
+    "latest": true,
+    "sharable": true
+  },
+  {
+    "name": "python3.7",
+    "extension": ".py",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "python3.6",
+    "extension": ".py",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "python2.7",
+    "extension": ".py",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "ruby2.7",
+    "extension": ".rb",
+    "handlerFormat": "filename.handler",
+    "latest": true
+  },
+  {
+    "name": "ruby2.5",
+    "extension": ".rb",
+    "handlerFormat": "filename.handler"
+  },
+  {
+    "name": "java11",
+    "extension": ".java",
+    "handlerFormat": "filename.handler",
+    "latest": true
+  },
+  {
+    "name": "java8.al2",
+    "extension": ".java",
+    "handlerFormat": "filename.handler"
+  },
+  {
+    "name": "java8",
+    "extension": ".java",
+    "handlerFormat": "filename.handler"
+  },
+  {
+    "name": "go1.x",
+    "extension": ".go",
+    "latest": true,
+    "handlerFormat": "filename.handler"
+  },
+  {
+    "name": "dotnetcore3.1",
+    "extension": ".cs",
+    "handlerFormat": "assembly_name::namespace.Handler::Method",
+    "latest": true
+  },
+  {
+    "name": "dotnetcore2.1",
+    "extension": ".cs",
+    "handlerFormat": "assembly_name::namespace.Handler::Method"
+  }
+]
