@@ -95,9 +95,9 @@ async function run(cmd) {
     }
     const props = sharedTemplate.Resources[resource].Properties;    
     if (
+      sharedTemplate.Resources[resource].Type === "AWS::Serverless::Function" && 
       runtimes.filter(p=>p.name === (props.Runtime || template.Globals.Function.Runtime))[0]
-        .sharable &&
-      sharedTemplate.Resources[resource].Type === "AWS::Serverless::Function"
+        .sharable      
     ) {
       const shareCode = await inputUtil.prompt(
         `Share function code? (${resource})`
