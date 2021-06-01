@@ -93,9 +93,11 @@ async function run(cmd) {
         p.replace(new RegExp(dynamic, "g"), placeholderName)
       );
     }
-    const props = sharedTemplate.Resources[resource].Properties;    
+    console.log(resource);
+    const resourceObj = template.Resources[resource] || sharedTemplate.Resources[resource] 
+    const props = resourceObj.Properties;    
     if (
-      sharedTemplate.Resources[resource].Type === "AWS::Serverless::Function" && 
+      resourceObj.Type === "AWS::Serverless::Function" && 
       runtimes.filter(p=>p.name === (props.Runtime || template.Globals.Function.Runtime))[0]
         .sharable      
     ) {
