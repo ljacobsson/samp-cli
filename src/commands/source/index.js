@@ -3,7 +3,7 @@ const sourceUtil = require("./source");
 program
   .command("source")
   .alias("s")
-  .description("Imports a pattern from https://github.com/aws-samples/serverless-patterns/")
+  .description("Adds a custom GitHub repository as a serverless patterns source")
   .action(async (cmd) => {
     await sourceUtil.run(cmd);
   });
