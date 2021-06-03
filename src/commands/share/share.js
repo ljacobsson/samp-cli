@@ -93,7 +93,6 @@ async function run(cmd) {
         p.replace(new RegExp(dynamic, "g"), placeholderName)
       );
     }
-    console.log(resource);
     const resourceObj = template.Resources[resource] || sharedTemplate.Resources[resource] 
     const props = resourceObj.Properties;    
     if (
@@ -260,7 +259,7 @@ function yamleize(flattened, customizables) {
         propertyName +
         ": " +
         flattened[row] +
-        (customizables.includes(row) ? " [✎ ]" : ""),
+        (customizables.includes(row) ? " [✎]" : ""),
       value: { path: row, value: flattened[row] },
     });
   }
