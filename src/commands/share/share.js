@@ -186,7 +186,7 @@ async function run(cmd) {
       repo.owner,
       repo.repo,
       repo.branch,
-      path.join(repo.root, name, repo.relativePath, repo.fileNames[0]),
+      path.join(repo.root, name, repo.relativePath, repo.fileNames[0]).replace(/\\/g, "/"),
       parser.stringify("yaml", sharedTemplate),
       true
     );
