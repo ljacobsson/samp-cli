@@ -80,11 +80,13 @@
     "name": "dotnetcore3.1",
     "extension": ".cs",
     "handlerFormat": "assembly_name::namespace.Handler::Method",
-    "latest": true
+    "latest": true,
+    "sharable": true
   },
   {
     "name": "dotnetcore2.1",
     "extension": ".cs",
-    "handlerFormat": "assembly_name::namespace.Handler::Method"
+    "handlerFormat": "assembly_name::namespace.Handler::Method",
+    "sharable": true
   }
 ]

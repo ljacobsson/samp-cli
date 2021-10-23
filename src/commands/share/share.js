@@ -202,7 +202,7 @@ async function run(cmd) {
           name,
           repo.relativePath,
           sharedFunctionHandlers[funcCode]
-        ),
+        ).replace(/\\/g, "/"),
         code
       );
     }
