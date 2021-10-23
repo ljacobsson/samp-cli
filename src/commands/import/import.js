@@ -90,7 +90,7 @@ async function run(cmd) {
     if (ownTemplate[block.section][block.name]) {
       block.name = await inputUtil.text(
         `Naming conflict for ${block.name}. Please select a new name. Make sure to update it dependents to the new name`,
-        `${block.name}_2`
+        `${block.name}2`
       );
     }
 
