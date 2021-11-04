@@ -4,6 +4,7 @@ program
   .command("import")
   .alias("i")
   .option("-t, --template [template]", "SAM template file", "template.yaml")
+  .option("-m, --merge", "Merge pattern with existing template resource(s)", false)
   .description("Imports a pattern from https://github.com/aws-samples/serverless-patterns/")
   .action(async (cmd) => {
     await importUtil.run(cmd);

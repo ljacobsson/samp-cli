@@ -7,7 +7,7 @@ const baseFile = require("../../shared/baseFile.json");
 const templateAnatomy = require("../../shared/templateAnatomy.json");
 const lambdaHandlerParser = require("../../shared/lambdaHandlerParser");
 const fs = require("fs");
-const path = require("path");
+const _ = require("lodash");
 
 const templateType = "SAM"; // to allow for more template frameworks
 async function run(cmd) {
@@ -83,18 +83,26 @@ async function run(cmd) {
       .filter((p) => p.value && p.value.section !== "Outputs")
       .map((p) => p.value)
   );
+  if (cmd.merge) {
+    template = await mergeWithExistingResource(ownTemplate, blocks, template);
+  }
   let getCode;
   for (const block of blocks) {
     ownTemplate[block.section] = ownTemplate[block.section] || {};
     const name = block.name;
     if (ownTemplate[block.section][block.name]) {
-      block.name = await inputUtil.text(
-        `Naming conflict for ${block.name}. Please select a new name. Make sure to update it dependents to the new name`,
-        `${block.name}_2`
-      );
+      if (!cmd.merge) {
+        block.name = await inputUtil.text(
+          `Naming conflict for ${block.name}. Please select a new name. Make sure to update it dependents to the new name`,
+          `${block.name}_2`
+        );
+      }
     }
 
-    ownTemplate[block.section][block.name] = template[block.section][name];
+    ownTemplate[block.section][block.name] = _.merge(
+      ownTemplate[block.section][block.name] || {},
+      template[block.section][name]
+    );
     if (template[block.section][name].Type === "AWS::Serverless::Function") {
       const functionProps = {
         ...((template.Globals && template.Globals.Function) || {}),
@@ -106,34 +114,7 @@ async function run(cmd) {
           `Import function code (${functionProps.Runtime})?`
         ));
       if (getCode) {
-        const lambdaFilePath = `${
-          pattern.setting.root.length
-            ? pattern.setting.root + "/"
-            : pattern.setting.root
-        }${pattern.pattern.name}${
-          pattern.setting.relativePath
-        }${lambdaHandlerParser.buildFileName(template.Globals, functionProps)}`;
-        try {
-          let lambdaFile = await githubUtil.getContent(
-            pattern.setting.owner,
-            pattern.setting.repo,
-            lambdaFilePath
-          );
-          let lambdaDiskPath = lambdaFilePath.split("/").slice(1).join("/");
-          const lambdaDir = lambdaDiskPath.split("/").slice(0, -1).join("/");
-          fs.mkdirSync(lambdaDir, {
-            recursive: true,
-          });
-          if (fs.existsSync(lambdaDiskPath)) {
-            const newFileName = await inputUtil.text(
-              `${lambdaDiskPath} already exists. Please enter another filename: ${lambdaDir}/`
-            );
-            lambdaDiskPath = `${lambdaDir}/${newFileName}`;
-          }
-          fs.writeFileSync(lambdaDiskPath, lambdaFile);
-        } catch (err) {
-          console.error("Failed to download function: " + err.message);    
-        }
+        await importFunctionCode(pattern, template, functionProps);
       }
     }
 
@@ -161,9 +142,91 @@ async function run(cmd) {
   );
 }
 
+function merge(target, source) {
+  for (const key of Object.keys(source)) {
+    if (source[key] instanceof Object)
+      Object.assign(source[key], merge(target[key], source[key]));
+  }
+
+  Object.assign(target || {}, source);
+  return target;
+}
+
 module.exports = {
   run,
 };
+async function mergeWithExistingResource(ownTemplate, blocks, template) {
+  const existingTypes = Object.keys(ownTemplate.Resources).map(
+    (p) => ownTemplate.Resources[p].Type
+  );
+  const mergable = blocks
+    .filter((p) => p.section === "Resources")
+    .filter((p) => existingTypes.includes(template.Resources[p.name].Type))
+    .map((p) => p.name);
+  let mergeResources = [];
+  if (mergable.length > 1) {
+    mergeResources = await inputUtil.checkbox(
+      "Select resource(s) to merge with existing resource(s)",
+      mergable.map((p) => {
+        return { name: `${p} (${template.Resources[p].Type})`, value: p };
+      })
+    );
+  } else {
+    mergeResources = mergable;
+  }
+
+  for (const mergeResource of mergeResources) {
+    const compatibleResources = Object.keys(ownTemplate.Resources).filter(
+      (p) =>
+        ownTemplate.Resources[p].Type === template.Resources[mergeResource].Type
+    );
+
+    const selectedMerge = await inputUtil.list(
+      "Select resources to merge",
+      compatibleResources.map((p) => {
+        return { name: `${mergeResource} -> ${p}`, value: p };
+      })
+    );
+
+    template = JSON.parse(
+      JSON.stringify(template).replaceAll(mergeResource, selectedMerge)
+    );
+    blocks.find((p) => p.name === mergeResource).name = selectedMerge;
+  }
+  return template;
+}
+
+async function importFunctionCode(pattern, template, functionProps) {
+  const lambdaFilePath = `${
+    pattern.setting.root.length
+      ? pattern.setting.root + "/"
+      : pattern.setting.root
+  }${pattern.pattern.name}${
+    pattern.setting.relativePath
+  }${lambdaHandlerParser.buildFileName(template.Globals, functionProps)}`;
+  try {
+    let lambdaFile = await githubUtil.getContent(
+      pattern.setting.owner,
+      pattern.setting.repo,
+      lambdaFilePath
+    );
+    let lambdaDiskPath = lambdaFilePath.split("/").slice(1).join("/");
+    const lambdaDir = lambdaDiskPath.split("/").slice(0, -1).join("/");
+    fs.mkdirSync(lambdaDir, {
+      recursive: true,
+    });
+    if (fs.existsSync(lambdaDiskPath)) {
+      const newFileName = await inputUtil.text(
+        `${lambdaDiskPath} already exists. Please enter another filename: ${lambdaDir}/`
+      );
+      lambdaDiskPath = `${lambdaDir}/${newFileName}`;
+    }
+    fs.writeFileSync(lambdaDiskPath, lambdaFile);
+  } catch (err) {
+    console.error("Failed to download function: " + err.message);
+  }
+}
+
 function setDefaultMetadata(template) {
   template.Metadata = template.Metadata || { PatternTransform: {} };
   template.Metadata.PatternTransform = template.Metadata.PatternTransform || {
