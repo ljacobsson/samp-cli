@@ -8,7 +8,7 @@ const templateAnatomy = require("../../shared/templateAnatomy.json");
 const lambdaHandlerParser = require("../../shared/lambdaHandlerParser");
 const fs = require("fs");
 const _ = require("lodash");
-
+const runtimes = require("../../shared/runtimes.json");
 const templateType = "SAM"; // to allow for more template frameworks
 async function run(cmd) {
   if (!fs.existsSync(cmd.template)) {
@@ -76,7 +76,7 @@ async function run(cmd) {
       );
     }
   }
-  const blocks = await inputUtil.checkbox(
+  let blocks = await inputUtil.checkbox(
     "Select blocks to import",
     sectionList,
     sectionList
@@ -86,7 +86,6 @@ async function run(cmd) {
   if (cmd.merge) {
     template = await mergeWithExistingResource(ownTemplate, blocks, template);
   }
-  let getCode;
   for (const block of blocks) {
     ownTemplate[block.section] = ownTemplate[block.section] || {};
     const name = block.name;
@@ -99,24 +98,11 @@ async function run(cmd) {
       }
     }
 
+    await handleFunctionActions(template, block, name, pattern);
     ownTemplate[block.section][block.name] = _.merge(
       ownTemplate[block.section][block.name] || {},
       template[block.section][name]
     );
-    if (template[block.section][name].Type === "AWS::Serverless::Function") {
-      const functionProps = {
-        ...((template.Globals && template.Globals.Function) || {}),
-        ...template[block.section][name].Properties,
-      };
-      getCode =
-        getCode ||
-        (await inputUtil.prompt(
-          `Import function code (${functionProps.Runtime})?`
-        ));
-      if (getCode) {
-        await importFunctionCode(pattern, template, functionProps);
-      }
-    }
 
     console.log(`Added ${block.name} under ${block.section}`);
   }
@@ -142,19 +128,29 @@ async function run(cmd) {
   );
 }
 
-function merge(target, source) {
-  for (const key of Object.keys(source)) {
-    if (source[key] instanceof Object)
-      Object.assign(source[key], merge(target[key], source[key]));
-  }
-
-  Object.assign(target || {}, source);
-  return target;
-}
-
 module.exports = {
   run,
 };
+async function handleFunctionActions(template, block, name, pattern) {
+  let getCode;
+
+  if (template[block.section][name].Type === "AWS::Serverless::Function") {
+    const functionProps = {
+      ...((template.Globals && template.Globals.Function) || {}),
+      ...template[block.section][name].Properties,
+    };
+    getCode =
+      getCode ||
+      (await inputUtil.prompt(
+        `Import function code (${functionProps.Runtime})?`
+      ));
+    if (getCode) {
+      await importFunctionCode(pattern, template, functionProps, name);
+      template[block.section][name].Properties.Handler = `${name}.handler`;
+    }
+  }
+}
+
 async function mergeWithExistingResource(ownTemplate, blocks, template) {
   const existingTypes = Object.keys(ownTemplate.Resources).map(
     (p) => ownTemplate.Resources[p].Type
@@ -191,12 +187,20 @@ async function mergeWithExistingResource(ownTemplate, blocks, template) {
     template = JSON.parse(
       JSON.stringify(template).replaceAll(mergeResource, selectedMerge)
     );
-    blocks.find((p) => p.name === mergeResource).name = selectedMerge;
+
+    for (const block of blocks) {
+      block.name = block.name.replace(mergeResource, selectedMerge);
+    }
   }
   return template;
 }
 
-async function importFunctionCode(pattern, template, functionProps) {
+async function importFunctionCode(
+  pattern,
+  template,
+  functionProps,
+  resourceName
+) {
   const lambdaFilePath = `${
     pattern.setting.root.length
       ? pattern.setting.root + "/"
@@ -215,13 +219,20 @@ async function importFunctionCode(pattern, template, functionProps) {
     fs.mkdirSync(lambdaDir, {
       recursive: true,
     });
+    
+    let newFileName =
+      resourceName +
+      runtimes.find((p) => p.name === functionProps.Runtime).extension;
+    lambdaDiskPath = `${lambdaDir}/${newFileName}`;
+    let skipImport = false;
     if (fs.existsSync(lambdaDiskPath)) {
-      const newFileName = await inputUtil.text(
-        `${lambdaDiskPath} already exists. Please enter another filename: ${lambdaDir}/`
+      newFileName = await inputUtil.text(
+        `${lambdaDiskPath} already exists. Please enter another filename (leave empty to skip import): ${lambdaDir}/`
       );
+      skipImport = newFileName.length === 0;
       lambdaDiskPath = `${lambdaDir}/${newFileName}`;
     }
-    fs.writeFileSync(lambdaDiskPath, lambdaFile);
+    if (!skipImport) fs.writeFileSync(lambdaDiskPath, lambdaFile);
   } catch (err) {
     console.error("Failed to download function: " + err.message);
   }
