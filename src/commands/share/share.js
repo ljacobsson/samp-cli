@@ -36,9 +36,8 @@ async function run(cmd) {
       });
     }
   }
-
   const items = await inputUtil.checkbox(
-    "Select components(s) making up your pattern",
+    "Select the resource(s) that make up your pattern",
     choices
   );
   let sharedTemplate = {};
@@ -54,6 +53,7 @@ async function run(cmd) {
     },
   };
   let resources = Object.keys(sharedTemplate.Resources);
+  let additionalFiles = [];
   const sharedFunctionHandlers = {};
   for (const resourceIndex in resources) {
     const resource = resources[resourceIndex];
@@ -93,12 +93,14 @@ async function run(cmd) {
         p.replace(new RegExp(dynamic, "g"), placeholderName)
       );
     }
-    const resourceObj = template.Resources[resource] || sharedTemplate.Resources[resource] 
-    const props = resourceObj.Properties;    
+    const resourceObj =
+      template.Resources[resource] || sharedTemplate.Resources[resource];
+    const props = resourceObj.Properties;
     if (
-      resourceObj.Type === "AWS::Serverless::Function" && 
-      runtimes.filter(p=>p.name === (props.Runtime || template.Globals.Function.Runtime))[0]
-        .sharable      
+      resourceObj.Type === "AWS::Serverless::Function" &&
+      runtimes.filter(
+        (p) => p.name === (props.Runtime || template.Globals.Function.Runtime)
+      )[0].sharable
     ) {
       const shareCode = await inputUtil.prompt(
         `Share function code? (${resource})`
@@ -111,6 +113,13 @@ async function run(cmd) {
       }
     }
   }
+  const shareAdditionalFiles = await inputUtil.prompt(
+    `Share supporting files? This could be configuration, library code, etc`
+  );
+  if (shareAdditionalFiles) {
+    additionalFiles = await inputUtil.files("Select additional files to share");
+  }
+
   const customizables = [];
   do {
     const flattened = flatten(sharedTemplate);
@@ -186,25 +195,18 @@ async function run(cmd) {
       repo.owner,
       repo.repo,
       repo.branch,
-      path.join(repo.root, name, repo.relativePath, repo.fileNames[0]).replace(/\\/g, "/"),
+      path
+        .join(repo.root, name, repo.relativePath, repo.fileNames[0])
+        .replace(/\\/g, "/"),
       parser.stringify("yaml", sharedTemplate),
       true
     );
     for (const funcCode of Object.keys(sharedFunctionHandlers)) {
-      const code = fs.readFileSync(sharedFunctionHandlers[funcCode]).toString();
+      await pushCode(sharedFunctionHandlers[funcCode], sharedFunctionHandlers[funcCode], repo, name);
+    }
 
-      await githubUtil.putContent(
-        repo.owner,
-        repo.repo,
-        repo.branch,
-        path.join(
-          repo.root,
-          name,
-          repo.relativePath,
-          sharedFunctionHandlers[funcCode]
-        ),
-        code
-      );
+    for (const additionalFile of additionalFiles) {
+      await pushCode(additionalFile, additionalFile.replace(process.cwd(), ""), repo, name);
     }
     console.log(
       `Pattern pushed. Please consider describing the pattern in the README: https://github.com/${repo.owner}/${repo.repo}/edit/${repo.branch}${repo.root}${name}${repo.relativePath}README.md`
@@ -215,6 +217,19 @@ async function run(cmd) {
       "Make sure your GITHUB_TOKEN has sufficient permissions to push to this repository"
     );
   }
+}
+
+async function pushCode(file, relativeFilePath, repo, name) {
+  console.log(file);
+  const code = fs.readFileSync(file).toString();
+
+  await githubUtil.putContent(
+    repo.owner,
+    repo.repo,
+    repo.branch,
+    path.join(repo.root, name, repo.relativePath, relativeFilePath),
+    code
+  );
 }
 
 function resourceShortName(type) {
