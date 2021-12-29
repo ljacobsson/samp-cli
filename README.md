@@ -12,9 +12,9 @@ Acquire a Github access token from [here](https://github.com/settings/tokens) an
 ## Usage
 
 ### sam-patterns init
-Initialises a project based on a cookiecutter template. By default the tool gives access to the same [AWS managed templates](https://github.com/aws/aws-sam-cli-app-templates) that are used by [sam-cli](https://github.com/aws/aws-sam-cli).
+Initialises a SAM project based on a cookiecutter template. By default the tool gives access to the same [AWS managed templates](https://github.com/aws/aws-sam-cli-app-templates) that are used by [sam-cli](https://github.com/aws/aws-sam-cli).
 
-You can add custom template locations by using the `--add-repository` flag
+You can add custom template locations by using the `--add-repository` flag.
 
 ```
 Usage: sam-patterns init [options]

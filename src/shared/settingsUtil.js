@@ -49,7 +49,7 @@ function saveInitSource(settings) {
 
 function getPatternSource() {
   if (!fs.existsSync(settingsFilePath)) {
-    return { patternSources: [], initSources: [] };
+    return [];
   }
   const file = fs.readFileSync(settingsFilePath);
   const obj = JSON.parse(file.toString());
@@ -63,7 +63,7 @@ function getPatternSource() {
 
 function getInitSource() {
   if (!fs.existsSync(settingsFilePath)) {
-    return { patternSources: [], initSources: [] };
+    return [];
   }
   const file = fs.readFileSync(settingsFilePath);
   const obj = JSON.parse(file.toString());
