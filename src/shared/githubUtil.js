@@ -23,7 +23,7 @@ const settings = [
     excludeRegex: /cdk/,
     url: "https://serverlessland.com/patterns/#PATTERN_NAME#",
   },
-  ...settingsUtil.get(),
+  ...settingsUtil.getPatternSource(),
 ];
 
 function sanitize(setting) {
@@ -66,11 +66,12 @@ async function getPatterns() {
   return patternsList;
 }
 
-async function getContent(owner, repo, path) {
+async function getContent(owner, repo, path, branch) {
   const templateFile = await github.repos.getContent({
     owner,
     repo,
-    path,
+    path,  
+    ref: branch || "master",
   });
   const templateString = Buffer.from(
     templateFile.data.content,

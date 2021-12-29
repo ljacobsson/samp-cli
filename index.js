@@ -6,6 +6,7 @@ require("./src/commands/import");
 require("./src/commands/explore");
 require("./src/commands/source");
 require("./src/commands/share");
+require("./src/commands/init");
 
 program.version(package.version, "-v, --vers", "output the current version");
 

@@ -182,7 +182,7 @@ async function run(cmd) {
       .join("-")
   );
 
-  const sources = settingsUtil.get();
+  const sources = settingsUtil.getPatternSource();
   const repo = await inputUtil.autocomplete(
     "Select repository",
     sources.map((p) => {

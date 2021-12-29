@@ -1,5 +1,4 @@
 const inputUtil = require("../../shared/inputUtil");
-const githubUtil = require("../../shared/githubUtil");
 const settingsUtil = require("../../shared/settingsUtil");
 
 async function run(cmd) {
@@ -28,7 +27,7 @@ async function run(cmd) {
     "template.yaml,template.yml"
   )).split(",").map(p=>p.trim());
   settings.url = await inputUtil.text("URL (use #PATTERN_NAME# as placeholder):", `https://github.com/${settings.owner}/${settings.repo}/tree/main${settings.root}#PATTERN_NAME#`);
-  settingsUtil.save(settings);
+  settingsUtil.savePatternSource(settings);
 }
 
 module.exports = {
