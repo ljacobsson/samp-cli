@@ -68,12 +68,16 @@ async function run(cmd) {
     cookiecutterFile.replaceAll("cookiecutter.", "cookiecutter_")
   );
   for (const key of Object.keys(cookiecutter)) {
-    if (typeof cookiecutter[key] !== 'string') {
+    if (typeof cookiecutter[key] !== "string") {
       continue;
     }
     cookiecutter[key] = await inputUtil.text(
       capitalizeFirstLetter(key.replaceAll("_", " ")),
-      nunjucks.renderString(cookiecutter[key], cookiecutter) || nunjucks.renderString(cookiecutter[key].replace("cookiecutter_", ""), cookiecutter)
+      nunjucks.renderString(cookiecutter[key], cookiecutter) ||
+        nunjucks.renderString(
+          cookiecutter[key].replace("cookiecutter_", ""),
+          cookiecutter
+        )
     );
   }
 
@@ -84,6 +88,7 @@ async function run(cmd) {
     }
   }
   const filePromises = [];
+  let aPath;
   for (const item of tree.data.tree
     .filter(
       (p) =>
@@ -92,12 +97,15 @@ async function run(cmd) {
         !p.path.endsWith("setup.cfg")
     )
     .map((p) => p.path)) {
-    filePromises.push(
-      getFile(item, cookiecutter, path, sourceRepo)
-    );
+    filePromises.push(getFile(item, cookiecutter, path, sourceRepo));
+    aPath = item;
   }
   await Promise.all(filePromises);
-  console.log("Your project has been generated!");
+  console.log(`Your project has been generated under ./${nunjucks.renderString(replaceCookieDot(aPath), cookiecutter).replace(path, "").split("/")[1]}`);
+}
+
+function replaceCookieDot(aPath) {
+  return aPath.replaceAll("cookiecutter.", "cookiecutter_");
 }
 
 async function getSourceRepos() {
@@ -133,12 +141,7 @@ async function addRepo() {
   settingsUtil.saveInitSource({ org, repo, path, branch });
 }
 
-async function getFile(
-  item,
-  cookiecutter,
-  path,
-  sourceRepo
-) {
+async function getFile(item, cookiecutter, path, sourceRepo) {
   const filePath = nunjucks.renderString(
     item.replaceAll("cookiecutter.", "cookiecutter_"),
     cookiecutter
