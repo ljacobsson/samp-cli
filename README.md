@@ -12,19 +12,20 @@ Acquire a Github access token from [here](https://github.com/settings/tokens) an
 ## Usage
 
 ### sam-patterns init
-Imports a serverless pattern into an existing template. You can merge one or more resources in the imported pattern with existing resources in your template by adding the `--merge` flag to, for example, combine `sqs-lambda` and `lambda-dynamodb` as one `sqs-lambda-dynamodb` pattern. 
+Initialises a project based on a cookiecutter template. By default the tool gives access to the same [AWS managed templates](https://github.com/aws/aws-sam-cli-app-templates) that are used by [sam-cli](https://github.com/aws/aws-sam-cli).
+
+You can add custom template locations by using the `--add-repository` flag
 
 ```
-Usage: sam-patterns import|i [options]
+Usage: sam-patterns init [options]
 
-Imports a pattern from https://github.com/aws-samples/serverless-patterns/
+Initialises a SAM project from a quick-start template. See https://github.com/aws/aws-sam-cli-app-templates for examples and structure.
 
 Options:
-  -t, --template [template]  SAM template file (default: "template.yaml")
-  -m, --merge                Merge pattern with existing template resource(s) (default: false)
-  -h, --help                 display help for command
+  -r, --add-repository  GitHub repository where your templates are located (default: false)
+  -h, --help            display help for command
 ```
-![Demo](images/demo.gif)
+![Demo](images/init.gif)
 
 ### sam-patterns import
 Imports a serverless pattern into an existing template. You can merge one or more resources in the imported pattern with existing resources in your template by adding the `--merge` flag to, for example, combine `sqs-lambda` and `lambda-dynamodb` as one `sqs-lambda-dynamodb` pattern. 
