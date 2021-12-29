@@ -11,6 +11,21 @@ Acquire a Github access token from [here](https://github.com/settings/tokens) an
 
 ## Usage
 
+### sam-patterns init
+Imports a serverless pattern into an existing template. You can merge one or more resources in the imported pattern with existing resources in your template by adding the `--merge` flag to, for example, combine `sqs-lambda` and `lambda-dynamodb` as one `sqs-lambda-dynamodb` pattern. 
+
+```
+Usage: sam-patterns import|i [options]
+
+Imports a pattern from https://github.com/aws-samples/serverless-patterns/
+
+Options:
+  -t, --template [template]  SAM template file (default: "template.yaml")
+  -m, --merge                Merge pattern with existing template resource(s) (default: false)
+  -h, --help                 display help for command
+```
+![Demo](images/demo.gif)
+
 ### sam-patterns import
 Imports a serverless pattern into an existing template. You can merge one or more resources in the imported pattern with existing resources in your template by adding the `--merge` flag to, for example, combine `sqs-lambda` and `lambda-dynamodb` as one `sqs-lambda-dynamodb` pattern. 
 
