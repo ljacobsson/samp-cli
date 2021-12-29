@@ -97,6 +97,7 @@ async function run(cmd) {
     );
   }
   await Promise.all(filePromises);
+  console.log("Your project has been generated!");
 }
 
 async function getSourceRepos() {
