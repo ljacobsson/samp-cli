@@ -38,7 +38,7 @@ async function run(cmd) {
       contents.data
         .filter(
           (p) =>
-            p.name.startsWith("cookiecutter-") ||
+            (path !== "" && p.type === "dir") ||
             runtimeNames.filter((q) => p.name.startsWith(q)).length
         )
         .map((p) => {
