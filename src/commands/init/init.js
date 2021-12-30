@@ -129,7 +129,7 @@ function capitalizeFirstLetter(string) {
 
 async function addRepo() {
   const org = await inputUtil.text("GitHub organisation", "my-org");
-  const repo = await inputUtil.text("GitHub organisation", "my-repo");
+  const repo = await inputUtil.text("Repository", "my-repo");
   let path = await inputUtil.text("Path", "/");
   let branch = await inputUtil.text("Branch", "main");
   if (path === "/") {
