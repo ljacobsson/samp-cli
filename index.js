@@ -7,6 +7,7 @@ require("./src/commands/explore");
 require("./src/commands/source");
 require("./src/commands/share");
 require("./src/commands/init");
+require("./src/commands/policy");
 
 program.version(package.version, "-v, --vers", "output the current version");
 

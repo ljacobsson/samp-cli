@@ -43,7 +43,7 @@ Options:
 ![Demo](images/demo.gif)
 
 ### sam-patterns explore
-Lets you browse and explore your serverless patterns repositories. You can either visualise them using [cfn-diagram](https://github.com/mhlabs/cfn-diagram) or click through to the pattern's documentation. 
+Lets you browse and explore your serverless patterns repositories. 
 
 ```
 Usage: sam-patterns explore|e [options]
@@ -82,6 +82,23 @@ If you create your own collection you need to follow this structure:
     ├── README.md
     └── template.yaml
 ```
+
+### sam-patterns policy
+Lets you quickly build IAM polices or find SAM policy templates based on the resources you have in your template. The generated policy can be attached to supported resource types.
+
+```
+Usage: sam-patterns policy|p [options]
+
+Opens a wizard thet help you to create and attach a new IAM policy to a resource in your template
+
+Options:
+  -t, --template <filename>         Template file name (default: "template.yaml")
+  -f, --format <JSON|YAML>          Output format (default: "JSON")
+  -o, --output <console|clipboard>  Policy output (default: "console")
+  -h, --help                        display help for command
+```
+![Demo](images/policy-demo.gif)
+
 
 ### sam-patterns share
 Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.

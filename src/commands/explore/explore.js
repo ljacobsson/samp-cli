@@ -7,7 +7,6 @@ const github = new Octokit({
   auth: `token ${process.env.GITHUB_TOKEN}`,
 });
 
-const cfnDia = require("@mhlabs/cfn-diagram/graph/Vis");
 const githubUtil = require("../../shared/githubUtil");
 
 async function run(cmd) {
@@ -61,12 +60,8 @@ async function run(cmd) {
     const url = pattern.setting.url.replace("https://", "");
     const action = await inputUtil.list("Learn more?", [
       `View documentation`,
-      `Visualise`,
       "Skip",
     ]);
-    if (action === "Visualise") {
-      await cfnDia.renderTemplate(template, false, null, false, true);
-    }
     if (action === "View documentation") {
       open(
         `${pattern.setting.url.replace(
