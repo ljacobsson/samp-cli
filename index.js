@@ -13,5 +13,10 @@ program.version(package.version, "-v, --vers", "output the current version");
 
 program.parse(process.argv);
 if (process.argv.length < 3) {
-  program.help();
+	program.help();
 }
+
+// nodejs<15 compatability
+String.prototype.replaceAll = function (target, replacement) {
+	return this.split(target).join(replacement);
+};
