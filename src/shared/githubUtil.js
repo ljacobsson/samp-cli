@@ -67,7 +67,6 @@ async function getPatterns() {
 }
 
 async function getContent(owner, repo, path, branch) {
-  console.log(owner, repo, path, branch || "master");
   const templateFile = await github.repos.getContent({
     owner,
     repo,

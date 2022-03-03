@@ -19,7 +19,7 @@ test("Test handler path builder", async () => {
   ];
 
   for (const testCase of cases) {
-    const path = parser.buildFileName(testCase.globals, testCase.props);
+    const path = parser.buildFileName(testCase.globals, testCase.props, { extension: ".js" });
     expect(path).toBe("src/app.js");
   }
 });
@@ -42,7 +42,7 @@ test("Test handler path builder deep path", async () => {
   ];
 
   for (const testCase of cases) {
-    const path = parser.buildFileName(testCase.globals, testCase.props);
+    const path = parser.buildFileName(testCase.globals, testCase.props, { extension: ".py" });
     expect(path).toBe("src/handlers/app.py");
   }
 });
@@ -55,7 +55,7 @@ test("Test handler path builder deep path 2", async () => {
   ];
 
   for (const testCase of cases) {
-    const path = parser.buildFileName(testCase.globals, testCase.props);
+    const path = parser.buildFileName(testCase.globals, testCase.props, {extension: ".py"});
     expect(path).toBe("src/handlers/app.py");
   }
 });
