@@ -104,7 +104,7 @@
     "name": "dotnetcore3.1",
     "extension": ".cs",
     "handlerFormat": "assembly_name::namespace.filename::Handler",
-    "latest": true
+    "latest": false
   },
   {
     "name": "dotnetcore2.1",
