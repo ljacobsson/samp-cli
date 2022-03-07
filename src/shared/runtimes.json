@@ -95,10 +95,16 @@
     "handlerFormat": "filename.handler"
   },
   {
-    "name": "dotnetcore3.1",
+    "name": "dotnet6",
     "extension": ".cs",
     "handlerFormat": "assembly_name::namespace.filename::Handler",
     "latest": true
+  },
+  {
+    "name": "dotnetcore3.1",
+    "extension": ".cs",
+    "handlerFormat": "assembly_name::namespace.filename::Handler",
+    "latest": false
   },
   {
     "name": "dotnetcore2.1",
