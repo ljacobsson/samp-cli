@@ -2,12 +2,13 @@
 process.env.AWS_SDK_LOAD_CONFIG = 1;
 const program = require("commander");
 const package = require("./package.json");
-require("./src/commands/import");
-require("./src/commands/explore");
-require("./src/commands/source");
-require("./src/commands/share");
-require("./src/commands/init");
-require("./src/commands/policy");
+const fs = require("fs");
+const path = require("path");
+
+const commands = fs.readdirSync(path.join(__dirname, "src", "commands"));
+for (const command of commands) {
+  require(`./src/commands/${command}`);
+}
 
 program.version(package.version, "-v, --vers", "output the current version");
 

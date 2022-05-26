@@ -1,0 +1,23 @@
+{
+  "AWS::Serverless::Function": {
+    "Ref": "Name"
+  },
+  "AWS::Serverless::Api": {
+    "Ref": "Id"
+  },
+  "AWS::Serverless::Application": {
+    "Ref": "Name"
+  },
+  "AWS::Serverless::HttpApi": {
+    "Ref": "Id"
+  },
+  "AWS::Serverless::LayerVersion": {
+    "Ref": "Arn"
+  },
+  "AWS::Serverless::SimpleTable": {
+    "Ref": "Name"
+  },
+  "AWS::Serverless::StateMachine": {
+    "Ref": "Arn"
+  }
+}

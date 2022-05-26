@@ -99,6 +99,19 @@ Options:
 ```
 ![Demo](images/policy-demo.gif)
 
+### sam-patterns return-values
+Lets you browse the return values of a resource and send the intrinsic function that retrieves it to your stdout or clipboard
+
+```
+Usage: sampat return-values|rv [options]
+
+Browses the return values and the intrinsic functions of a CloudFormation/SAM resource
+
+Options:
+  -t, --template [template]  SAM template file (default: "template.yaml")
+  -c, --clipboard            Send the return value's intrinsic function to the clipboard (default: false)
+  -h, --help                 display help for command
+```
 
 ### sam-patterns share
 Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.

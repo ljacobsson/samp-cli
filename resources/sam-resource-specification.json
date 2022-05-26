@@ -1,0 +1,51 @@
+{
+  "ResourceTypes": {
+    "AWS::Serverless::Function": {
+      "Attributes": {
+        "Arn": {
+          "PrimitiveType": "String"
+        },
+        "Alias": {
+          "PrimitiveType": "String"
+        },
+        "Version": {
+          "PrimitiveType": "String"
+        },
+        "DestinationTopic": {
+          "PrimitiveType": "String"
+        },
+        "DestinationQueue": {
+          "PrimitiveType": "String"
+        }
+      },
+      "Documentation": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html"
+    },
+    "AWS::Serverless::HttpApi": {
+      "Attributes": {
+        "Stage": {
+          "PrimitiveType": "String"
+        },
+        "DomainName": {
+          "PrimitiveType": "String"
+        }
+      },
+      "Documentation": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-httpapi.html"
+    },
+    "AWS::Serverless::Api": {
+      "Attributes": {
+        "RootResourceId": {
+          "Stage": "String"
+        }
+      },
+      "Documentation": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-api.html"
+    },
+    "AWS::Serverless::StateMachine": {
+      "Attributes": {
+        "Name": {
+          "PrimitiveType": "String"
+        }
+      },
+      "Documentation": "https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html"
+    }
+  }
+}

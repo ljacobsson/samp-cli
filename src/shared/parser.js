@@ -22,4 +22,5 @@ function stringify(identifier, obj) {
 module.exports = {
   parse,
   stringify,
+  format  
 };
