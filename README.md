@@ -2,7 +2,7 @@
 
 *Note: this is an early version of a CLI backed by an early version of a community driven resource; https://serverlessland.com/patterns/. There might be bugs*
 
-This tool lets you browse the content of the [Serverless Patterns Collection](https://serverlessland.com/patterns/) and inject patterns directly into your SAM template. Support for both JSON and YAML.
+This tool lets you browse the content of the [Serverless Patterns Collection](https://serverlessland.com/patterns/) and [Serverless Workflow Collection](https://serverlessland.com/workflows/) and inject patterns directly into your SAM template. Support for both JSON and YAML.
 
 ## Installation
 `npm install -g sam-patterns-cli`
@@ -36,9 +36,11 @@ Usage: sam-patterns import|i [options]
 Imports a pattern from https://github.com/aws-samples/serverless-patterns/
 
 Options:
-  -t, --template [template]  SAM template file (default: "template.yaml")
-  -m, --merge                Merge pattern with existing template resource(s) (default: false)
-  -h, --help                 display help for command
+  -t, --template [template]            SAM template file (default: "template.yaml")
+  -m, --merge                          Merge pattern with existing template resource(s) (default: false)
+  -a, --asl-format [asl-format]        Output format for StepFunctions ASL definitions (YAML or JSON) (default: "YAML")
+  -f, --source-filter [source-filter]  Filter text to match against source collection names. Optional (default: "")
+  -h, --help                           display help for command
 ```
 ![Demo](images/demo.gif)
 

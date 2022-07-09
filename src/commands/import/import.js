@@ -26,7 +26,7 @@ async function run(cmd) {
   const ownTemplate = parser.parse("own", fs.readFileSync(cmd.template));
   ownTemplate.Resources = ownTemplate.Resources || {};
 
-  const patterns = await githubUtil.getPatterns();
+  const patterns = await githubUtil.getPatterns(cmd.sourceFilter);
 
   const pattern = await inputUtil.autocomplete("Select pattern", patterns);
   let templateString;
