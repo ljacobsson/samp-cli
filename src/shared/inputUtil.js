@@ -58,7 +58,7 @@ async function autocomplete(message, items) {
 }
 
 async function list(message, items) {
-  return await choices(message, items, "list", null, 15);
+  return await choices(message, items, "list", null);
 }
 
 async function checkbox(message, items, defaults) {

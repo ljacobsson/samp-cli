@@ -20,8 +20,29 @@ const settings = [
     root: "/",
     relativePath: "/",
     fileNames: ["template.yml", "template.yaml"],
-    excludeRegex: /cdk/,
+    excludeRegex: /cdk|terraform/,
     url: "https://serverlessland.com/patterns/#PATTERN_NAME#",
+    collectionName: "ServerlessLand Patterns",
+  },
+  {
+    owner: "aws-samples",
+    repo: "aws-stepfunctions-examples",
+    root: "/sam",
+    relativePath: "/",
+    fileNames: ["template.yml", "template.yaml"],
+    excludeRegex: /cdk/,
+    url: "https://serverlessland.com/workflows/#PATTERN_NAME#",
+    collectionName: "ServerlessLand Workflows",
+  },
+  {
+    owner: "aws-samples",
+    repo: "step-functions-workflows-collection",
+    root: "/",
+    relativePath: "/",
+    fileNames: ["template.yml", "template.yaml"],
+    excludeRegex: /cdk/,
+    url: "https://serverlessland.com/workflows/#PATTERN_NAME#",
+    collectionName: "ServerlessLand Workflows",
   },
   ...settingsUtil.getPatternSource(),
 ];
@@ -34,10 +55,18 @@ function sanitize(setting) {
 
 async function getPatterns() {
   const patternsList = [];
+  let ownerName = "";
   for (const setting of settings) {
+    if (settings.length > 1) {
+      if (setting.collectionName) {
+        ownerName = ` [${setting.collectionName}]`;
+      } else {
+        ownerName = ` [${setting.owner}/${setting.repo}]`;
+      }
+    }
     sanitize(setting);
     patternsList.push(
-      new Separator(`*** ${setting.owner}/${setting.repo} ***`)
+      //      new Separator(`*** ${setting.owner}/${setting.repo} ***`)
     );
     try {
       const repoRoot = await github.repos.getContent({
@@ -53,7 +82,7 @@ async function getPatterns() {
             (!setting.excludeRegex || !setting.excludeRegex.test(p.name))
         )
         .map((p) => {
-          return { name: p.name, value: { pattern: p, setting } };
+          return { name: p.name.replace("demo-", "").replace("app-", "") + ownerName, value: { pattern: p, setting } };
         });
       patternsList.push(...patterns);
     } catch (err) {
@@ -70,7 +99,7 @@ async function getContent(owner, repo, path, branch) {
   const templateFile = await github.repos.getContent({
     owner,
     repo,
-    path,  
+    path,
     ref: branch,
   });
   const templateString = Buffer.from(
