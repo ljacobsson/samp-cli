@@ -16,11 +16,34 @@
     "languageName": "JavaScript",
     "extension": ".js",
     "handlerFormat": "filename.handler",
-    "latest": true,
     "sharable": true
   },
   {
     "name": "nodejs14.x",
+    "languageName": "TypeScript",
+    "extension": ".ts",
+    "handlerFormat": "filename.handler",
+    "sharable": true,
+    "metadataPromptTitle": "Please set esbuild configuration. Leave blank for defaults. Note that TypeScript support in SAM is in preview and can change without warning.",
+    "metadata": {
+      "BuildMethod": "esbuild",
+      "Properties": {
+        "Minify": { "Default": "true", "Prompt": true },
+        "Target": { "Default": "es2020", "Prompt": true },
+        "SourceMap": { "Default": "true", "Prompt": true }
+      }
+    }
+  },
+  {
+    "name": "nodejs16.x",
+    "languageName": "JavaScript",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "latest": true,
+    "sharable": true
+  },
+  {
+    "name": "nodejs16.x",
     "languageName": "TypeScript",
     "extension": ".ts",
     "handlerFormat": "filename.handler",
@@ -31,7 +54,7 @@
       "BuildMethod": "esbuild",
       "Properties": {
         "Minify": { "Default": "true", "Prompt": true },
-        "Target": { "Default": "es2020", "Prompt": true },
+        "Target": { "Default": "es2021", "Prompt": true },
         "SourceMap": { "Default": "true", "Prompt": true }
       }
     }
