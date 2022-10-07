@@ -26,6 +26,7 @@ async function run(cmd) {
     const contents = await github.repos.getContent({
       owner: sourceRepo.org,
       repo: sourceRepo.repo,
+      ref: sourceRepo.branch,
       path: path,
     });
     if (contents.data.map((p) => p.name).includes("cookiecutter.json")) {
