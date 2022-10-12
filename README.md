@@ -86,7 +86,7 @@ If you create your own collection you need to follow this structure:
 ```
 
 ### sam-patterns policy
-Lets you quickly build IAM polices or find SAM policy templates based on the resources you have in your template. The generated policy can be attached to supported resource types.
+Lets you quickly build IAM polices, find SAM policy templates or generate SAM Connectors based on the resources you have in your template. The generated policy can be attached to supported resource types.
 
 ```
 Usage: sam-patterns policy|p [options]
