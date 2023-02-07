@@ -1,5 +1,28 @@
 [
   {
+    "name": "nodejs",
+    "languageName": "JavaScript",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "sharable": true
+  },
+  {
+    "name": "nodejs",
+    "languageName": "TypeScript",
+    "extension": ".ts",
+    "handlerFormat": "filename.handler",
+    "sharable": true,
+    "metadataPromptTitle": "Please set esbuild configuration. Leave blank for defaults. Note that TypeScript support in SAM is in preview and can change without warning.",
+    "metadata": {
+      "BuildMethod": "esbuild",
+      "Properties": {
+        "Minify": { "Default": "true", "Prompt": true },
+        "Target": { "Default": "es2022", "Prompt": true },
+        "SourceMap": { "Default": "true", "Prompt": true }
+      }
+    }
+  },
+  {
     "name": "nodejs10.x",
     "extension": ".js",
     "handlerFormat": "filename.handler",
@@ -39,11 +62,34 @@
     "languageName": "JavaScript",
     "extension": ".js",
     "handlerFormat": "filename.handler",
-    "latest": true,
     "sharable": true
   },
   {
     "name": "nodejs16.x",
+    "languageName": "TypeScript",
+    "extension": ".ts",
+    "handlerFormat": "filename.handler",
+    "sharable": true,
+    "metadataPromptTitle": "Please set esbuild configuration. Leave blank for defaults. Note that TypeScript support in SAM is in preview and can change without warning.",
+    "metadata": {
+      "BuildMethod": "esbuild",
+      "Properties": {
+        "Minify": { "Default": "true", "Prompt": true },
+        "Target": { "Default": "es2021", "Prompt": true },
+        "SourceMap": { "Default": "true", "Prompt": true }
+      }
+    }
+  },
+  {
+    "name": "nodejs18.x",
+    "languageName": "JavaScript",
+    "extension": ".js",
+    "handlerFormat": "filename.handler",
+    "latest": true,
+    "sharable": true
+  },
+  {
+    "name": "nodejs18.x",
     "languageName": "TypeScript",
     "extension": ".ts",
     "handlerFormat": "filename.handler",
@@ -54,7 +100,7 @@
       "BuildMethod": "esbuild",
       "Properties": {
         "Minify": { "Default": "true", "Prompt": true },
-        "Target": { "Default": "es2021", "Prompt": true },
+        "Target": { "Default": "es2022", "Prompt": true },
         "SourceMap": { "Default": "true", "Prompt": true }
       }
     }
