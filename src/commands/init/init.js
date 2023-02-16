@@ -5,11 +5,11 @@ const runtimes = require("../../shared/runtimes.json");
 const { Octokit } = require("@octokit/rest");
 const fs = require("fs-extra");
 const settingsUtil = require("../../shared/settingsUtil");
-
+const ghToken = settingsUtil.getConfigSource().githubToken || process.env.GITHUB_TOKEN;
 let github;
-if (process.env.GITHUB_TOKEN) {
+if (ghToken) {
   github = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN}`,
+    auth: `token ${ghToken}`,
   });
 } else {
   github = new Octokit();

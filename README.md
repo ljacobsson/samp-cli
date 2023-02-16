@@ -7,7 +7,7 @@ This tool lets you browse the content of the [Serverless Patterns Collection](ht
 ## Installation
 `npm install -g sam-patterns-cli`
 
-Acquire a Github access token from [here](https://github.com/settings/tokens) and store it in environment variable `GITHUB_TOKEN`. This is not strictly required, but if you don't you'll be rate limited to 60 requests per hour.
+Acquire a Github access token from [here](https://github.com/settings/tokens) and either store it in environment variable `GITHUB_TOKEN` or configure the tool using `sam-patterns configure --github-token <token>` (recommended). This is not strictly required, but if you don't you'll be rate limited to 60 requests per hour. Note that SSH auth is not supported by by the OctoKit SDK.
 
 ## Usage
 
