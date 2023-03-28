@@ -38,7 +38,7 @@ async function run(cmd) {
   const prompt = `Generate this in AWS SAM JSON: ${cmd.query}`;
 
   const openAiRequest = {
-    model: "gpt-3.5-turbo",
+    model: cmd.model,
     messages: [
       {
         role: "user",
@@ -46,7 +46,7 @@ async function run(cmd) {
       }
     ],
     temperature: 0.5,
-    max_tokens: 1000
+    max_tokens: 2000
   };
   spinner.start();
   const response = await openai.createChatCompletion(openAiRequest);
@@ -68,7 +68,7 @@ async function run(cmd) {
     obj = obj.Resources;
   }
 
-  console.log(`Generated the following resources: ${parser.stringify("yaml", obj)}`);
+  console.log(`\n\nGenerated the following resources:\n\n${parser.stringify("yaml", obj)}`);
   const cont = await inputUtil.prompt(`Add to template?`);
   if (!cont) {
     return;

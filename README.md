@@ -62,14 +62,15 @@ Generates SAM resources based on a query to ChatGPT and merges them into your te
 
 
 ```
-Usage: sam-patterns generate|g [options]
+Usage: sampat generate|g [options]
 
-Generates resources from a GPT question
+Generates resources from a ChatGPT response
 
 Options:
   -t, --template [template]  SAM template file (default: "template.yaml")
-  -q, --question [question]  Question to ask ChatGPT. I.e "a lambda function that's
-                             triggered by an S3 event"
+  -q, --query [query]        Question to ask ChatGPT. I.e "a lambda function that's triggered by an S3 event"
+  -m, --model [model]        OpenAI model to use. Valid values are 'gpt-3.5-turbo' and 'gpt-4'. Note that gpt-3.5-turbo is fine for
+                             most use cases and that gpt-4 is slower and more expensive (default: "gpt-3.5-turbo")
   -h, --help                 display help for command
 ```
 ![Demo](images/demo-gpt.gif)
