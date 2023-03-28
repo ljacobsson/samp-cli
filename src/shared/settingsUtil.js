@@ -47,6 +47,24 @@ function saveInitSource(settings) {
   fs.writeFileSync(settingsFilePath, JSON.stringify(settingsObj, null, 2));
 }
 
+function saveConfigSource(setting) {
+  let settingsObj = {
+    patternSources: [],
+    initSources: [],
+  };
+  if (fs.existsSync(settingsFilePath)) {
+    const file = fs.readFileSync(settingsFilePath);
+    settingsObj = JSON.parse(file.toString());
+  } else {
+    try {
+      fs.mkdirSync(settingsPath);
+    } catch (err) {}
+  }
+  settingsObj.config = setting;
+
+  fs.writeFileSync(settingsFilePath, JSON.stringify(settingsObj, null, 2));
+}
+
 function getPatternSource() {
   if (!fs.existsSync(settingsFilePath)) {
     return [];
@@ -75,9 +93,25 @@ function getInitSource() {
   return objV2.initSources;
 }
 
+function getConfigSource() {
+  if (!fs.existsSync(settingsFilePath)) {
+    return {};
+  }
+  const file = fs.readFileSync(settingsFilePath);
+  const obj = JSON.parse(file.toString());
+  if (Array.isArray(obj)) {
+    objV2 = { patternSources: [], initSources: [], config: obj };
+  } else {
+    objV2 = obj;
+  }
+  return objV2.config || {};
+}
+
 module.exports = {
   savePatternSource,
   saveInitSource,
+  saveConfigSource,
   getPatternSource,
   getInitSource,
+  getConfigSource,
 };

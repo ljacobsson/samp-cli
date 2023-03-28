@@ -3,9 +3,6 @@ const parser = require("../../shared/parser");
 const open = require("open");
 const fs = require("fs");
 const { Octokit } = require("@octokit/rest");
-const github = new Octokit({
-  auth: `token ${process.env.GITHUB_TOKEN}`,
-});
 
 const githubUtil = require("../../shared/githubUtil");
 

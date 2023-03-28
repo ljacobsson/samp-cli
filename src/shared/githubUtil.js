@@ -3,9 +3,11 @@ const { Separator } = require("inquirer");
 const { exclude } = require("inquirer/lib/objects/separator");
 const settingsUtil = require("./settingsUtil");
 let github;
-if (process.env.GITHUB_TOKEN) {
+const ghToken = settingsUtil.getConfigSource().githubToken || process.env.GITHUB_TOKEN;
+
+if (ghToken) {
   github = new Octokit({
-    auth: `token ${process.env.GITHUB_TOKEN}`,
+    auth: `token ${ghToken}`,
   });
 } else {
   github = new Octokit();
