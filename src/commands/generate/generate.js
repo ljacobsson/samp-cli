@@ -34,7 +34,7 @@ async function run(cmd) {
   });
   const openai = new OpenAIApi(configuration);
 
-  const prompt = `Generate this in AWS SAM JSON: ${cmd.question}`;
+  const prompt = `Generate this in AWS SAM JSON: ${cmd.query}`;
 
   const openAiRequest = {
     model: "gpt-3.5-turbo",
@@ -92,7 +92,7 @@ async function run(cmd) {
   fs.writeFileSync(cmd.template, parser.stringify("own", newTemplate));
 
   console.log(
-    `${cmd.template} updated with ${cmd.question}. You'll want to sanity check the output to make sure it's correct.`
+    `${cmd.template} updated with ${cmd.query}. You'll want to sanity check the output to make sure it's correct.`
   );
 }
 
