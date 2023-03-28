@@ -1,6 +1,6 @@
 {
   "name": "sam-patterns-cli",
-  "version": "0.0.34",
+  "version": "0.0.35",
   "description": "Command line interface for quickly using patterns from https://github.com/aws-samples/serverless-patterns/",
   "main": "index.js",
   "scripts": {
@@ -32,6 +32,7 @@
   "dependencies": {
     "@mhlabs/iam-policies-cli": "^1.0.5",
     "@octokit/rest": "^18.5.2",
+    "cli-spinner": "^0.2.10",
     "clipboardy": "^2.2.0",
     "commander": "^7.2.0",
     "flat": "^5.0.2",
@@ -43,6 +44,7 @@
     "lodash": "^4.17.21",
     "nunjucks": "^3.2.3",
     "open": "^7.4.2",
+    "openai": "^3.2.1",
     "yaml-cfn": "^0.3.0"
   },
   "devDependencies": {

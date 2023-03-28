@@ -57,6 +57,24 @@ Options:
 ```
 ![Demo](images/demo2.gif)
 
+### sam-patterns generate
+Generates SAM resources based on a query to ChatGPT and merges them into your template. This is an experimental feature and requires a ChatGPT API key. You can get one [here](https://platform.openai.com/account/api-keys). Make sure to validate the output before deploying your template as it might contain errors or things that could incur cost 
+
+
+```
+Usage: sam-patterns generate|g [options]
+
+Generates resources from a GPT question
+
+Options:
+  -t, --template [template]  SAM template file (default: "template.yaml")
+  -q, --question [question]  Question to ask ChatGPT. I.e "a lambda function that's
+                             triggered by an S3 event"
+  -h, --help                 display help for command
+```
+![Demo](images/demo-gpt.gif)
+
+
 ### sam-patterns source
 Lets you add more sources. This could be public repositories, such as Jeremy Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
 
