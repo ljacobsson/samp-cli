@@ -13,6 +13,7 @@ async function run(cmd) {
     console.log(
       "You need to set your OpenAI API key. Use the 'sam-patterns configure' command to do this. You can get your API key from https://platform.openai.com/account/api-keys"
     );
+    return;
   }
   if (!fs.existsSync(cmd.template)) {
     console.log(
