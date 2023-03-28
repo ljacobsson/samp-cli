@@ -8,6 +8,11 @@ var Spinner = require('cli-spinner').Spinner;
 var spinner = new Spinner('Waiting for ChatGPT... %s');
 spinner.setSpinnerString('|/-\\');
 async function run(cmd) {
+  console.log("*** Note: This is an experimental feature and depends on the ChatGPT API. Make sure you review the output carefully before using it in production ***")
+  if (cmd.output.toLowerCase() === "cdk" && !cmd.outputFile) {
+    console.log(`You need to specify an output file with --output-file`);
+    return;
+  }
   const apiKey = settingsUtil.getConfigSource().openaiApiKey;
   if (!apiKey) {
     console.log(
@@ -34,8 +39,8 @@ async function run(cmd) {
     apiKey,
   });
   const openai = new OpenAIApi(configuration);
-
-  const prompt = `Generate this in AWS SAM JSON: ${cmd.query}`;
+  const format = cmd.output.toLowerCase() === "sam" ? "SAM JSON" : "TypeScript CDK";
+  const prompt = `Generate this in AWS ${format}: ${cmd.query}`;
 
   const openAiRequest = {
     model: cmd.model,
@@ -54,23 +59,42 @@ async function run(cmd) {
   const text = response.data.choices[0].message.content;
   // get the first JSON object in the text
   let obj;
-  try {
-    obj = JSON.parse(text.replace(/\n/g, '').replace(/```/g, '').match(/{.*}/)[0]);
-  } catch (e) {
+  if (cmd.output.toLowerCase() === "sam") {
     try {
-      obj = parser.parse("yaml", text);
+      obj = JSON.parse(text.replace(/\n/g, '').replace(/```/g, '').match(/{.*}/)[0]);
     } catch (e) {
-      console.log(`Couldn't parse the output from ChatGPT. Try again. The output was: \n${text}\n\nThe error was: ${e}`);
-      return;
+      try {
+        obj = parser.parse("yaml", text);
+      } catch (e) {
+        console.log(`Couldn't parse the output from ChatGPT. Try again. The output was: \n${text}\n\nThe error was: ${e}`);
+        return;
+      }
     }
+    if (obj.Resources) {
+      obj = obj.Resources;
+    }
+
+    console.log(`\n\nGenerated the following resources:\n\n${parser.stringify("yaml", obj)}`);
+  } else {
+    console.log(`\n\nGenerated the following CDK code:\n\n${text}`);
   }
-  if (obj.Resources) {
-    obj = obj.Resources;
+  const cont = await inputUtil.prompt(cmd.output.toLowerCase() === "sam" ? `Add to template?` : `Add to ${cmd.outputFile}?`);
+  if (!cont) {
+    return;
   }
 
-  console.log(`\n\nGenerated the following resources:\n\n${parser.stringify("yaml", obj)}`);
-  const cont = await inputUtil.prompt(`Add to template?`);
-  if (!cont) {
+  if (cmd.output.toLowerCase() === "cdk") {
+    if (!cmd.outputFile) {
+      console.log(`You need to specify an output file with --output-file`);
+      return;
+    }
+    if (fs.existsSync(cmd.outputFile)) {
+      const cont = await inputUtil.prompt(`Overwrite ${cmd.outputFile}?`);
+      if (!cont) {
+        return;
+      }
+    }
+    fs.writeFileSync(cmd.outputFile, text);
     return;
   }
 
