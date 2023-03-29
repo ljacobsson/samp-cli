@@ -58,7 +58,9 @@ Options:
 ![Demo](images/demo2.gif)
 
 ### sam-patterns generate
-Generates SAM resources based on a query to ChatGPT and merges them into your template. This is an experimental feature and requires a ChatGPT API key. You can get one [here](https://platform.openai.com/account/api-keys). Make sure to validate the output before deploying your template as it might contain errors or things that could incur cost 
+Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any language based on a query to ChatGPT. If you ask for SAM resources, it will merges them into your existing template. 
+
+This is an experimental feature and requires a ChatGPT API key. You can get one [here](https://platform.openai.com/account/api-keys). Make sure to validate the output before deploying your template as it might contain errors or things that could incur cost 
 
 
 ```
@@ -67,14 +69,24 @@ Usage: sampat generate|g [options]
 Generates resources from a ChatGPT response
 
 Options:
-  -t, --template [template]  SAM template file (default: "template.yaml")
-  -q, --query [query]        Question to ask ChatGPT. I.e "a lambda function that's triggered by an S3 event"
-  -m, --model [model]        OpenAI model to use. Valid values are 'gpt-3.5-turbo' and 'gpt-4'. Note that gpt-3.5-turbo is fine for
-                             most use cases and that gpt-4 is slower and more expensive (default: "gpt-3.5-turbo")
-  -h, --help                 display help for command
+  -t, --template [template]         SAM template file (default: "template.yaml")
+  -q, --query [query]               Question to ask ChatGPT. I.e "a lambda function that's triggered by an S3 event"
+  -m, --model [model]               OpenAI model to use. Valid values are 'gpt-3.5-turbo' and 'gpt-4'. Note that gpt-3.5-turbo is fine for
+                                    most use cases and that gpt-4 is slower and more expensive (default: "gpt-3.5-turbo")
+  -o, --output [output]             Output feature. Valid values are 'SAM', 'CDK', 'lambda-<language>' or 'ASL'. If not 'SAM', set
+                                    --output-file (default: "SAM")
+  -of, --output-file [output-file]  Output file. Only applicable if --output is CDK
+  -h, --help                        display help for command
 ```
 ![Demo](images/demo-gpt.gif)
 
+#### Examples
+* To generate SAM resources for a Lambda function that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table"`
+* To generate a CDK stack for the same: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
+* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output lambda-rust --output-file lambda.py`
+* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output ASL --output-file asl.yaml`
+
+Note that quality of results may vary and that you sometimes have to run the command a few times to get a good result.
 
 ### sam-patterns source
 Lets you add more sources. This could be public repositories, such as Jeremy Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
