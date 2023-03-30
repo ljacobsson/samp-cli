@@ -5,7 +5,6 @@ const settingsUtil = require("../../shared/settingsUtil");
 const fs = require("fs-extra");
 var Spinner = require('cli-spinner').Spinner;
 const baseFile = require("../../shared/baseFile.json");
-
 var spinner = new Spinner('Waiting for ChatGPT... %s');
 spinner.setSpinnerString('|/-\\');
 async function run(cmd) {
@@ -22,6 +21,7 @@ async function run(cmd) {
     );
     return;
   }
+
   let ownTemplate;
   if (output === "sam") {
     if (!fs.existsSync(cmd.template)) {
@@ -39,6 +39,7 @@ async function run(cmd) {
     ownTemplate = parser.parse("own", fs.readFileSync(cmd.template));
     ownTemplate.Resources = ownTemplate.Resources || {};
   }
+
   const configuration = new Configuration({
     apiKey,
   });

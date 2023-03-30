@@ -62,7 +62,6 @@ Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any
 
 This is an experimental feature and requires a ChatGPT API key. You can get one [here](https://platform.openai.com/account/api-keys). Make sure to validate the output before deploying your template as it might contain errors or things that could incur cost 
 
-
 ```
 Usage: sampat generate|g [options]
 
