@@ -82,8 +82,8 @@ Options:
 #### Examples
 * To generate SAM resources for a Lambda function that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table"`
 * To generate a CDK stack for the same: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
-* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output lambda-rust --output-file lambda.py`
-* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output ASL --output-file asl.yaml`
+* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "read an item from a dynamodb table" --output lambda-rust --output-file lambda.py`
+* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "read an item from a dynamodb table" --output ASL --output-file asl.yaml`
 
 Note that quality of results may vary and that you sometimes have to run the command a few times to get a good result.
 
