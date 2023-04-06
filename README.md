@@ -79,6 +79,22 @@ Options:
 ```
 ![Demo](images/demo-gpt.gif)
 
+### sam-patterns describe
+Describes a pattern using ChatGPT and gives suggestions on how to improve security.
+
+```
+Usage: sampat describe|d [options]
+
+Describes a SAM template using ChatGPT
+
+Options:
+  -t, --template [template]           SAM template file (default: "template.yaml")
+  -r, --repository-path [repository]  Github repository path, i.e "aws-samples/serverless-patterns/apigw-sfn"
+  -m, --model [model]                 OpenAI model to use. Valid values are 'gpt-3.5-turbo' and 'gpt-4'. Note that gpt-3.5-turbo is fine for most use cases and that gpt-4 is slower and more expensive (default: "gpt-3.5-turbo")
+  -h, --help                          display help for command
+```
+
+
 #### Examples
 * To generate SAM resources for a Lambda function that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table"`
 * To generate a CDK stack for the same: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
