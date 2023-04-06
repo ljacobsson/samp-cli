@@ -1,6 +1,6 @@
 {
   "name": "sam-patterns-cli",
-  "version": "0.0.40",
+  "version": "0.0.41",
   "description": "Command line interface for quickly using patterns from https://github.com/aws-samples/serverless-patterns/",
   "main": "index.js",
   "scripts": {
