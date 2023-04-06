@@ -52,7 +52,12 @@ async function run(cmd) {
       }
     }
     path += "/" + cmd.template;
+    try {
     template = await githubUtil.getContent(owner, repo, path);
+    } catch (e) {
+      console.log("Couldn't find " + cmd.template + " in " + cmd.repositoryPath);
+      return;
+    }    
   }
   const configuration = new Configuration({
     apiKey,
@@ -87,10 +92,16 @@ async function run(cmd) {
     max_tokens: 1000
   };
   spinner.start();
+  try {
+    
   const response = await openai.createChatCompletion(openAiRequest);
   spinner.stop();
   let text = response.data.choices[0].message.content;
   console.log(`\n\n${text}`);
+} catch (error) {
+  spinner.stop();
+  console.log("\n\n" + error.response.data.error.message);
+}
 
 
 }
