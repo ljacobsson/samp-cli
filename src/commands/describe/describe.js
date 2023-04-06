@@ -58,12 +58,29 @@ async function run(cmd) {
     apiKey,
   });
   const openai = new OpenAIApi(configuration);
+  let easterEggPrompt = "";
+  if (cmd["🥚"]) {
+    const funWaysOfDescribingSOmethingBoring = [
+      "as a romantic poem",
+      "as a joke",
+      "in the melody of God Save the Queen",
+      "in the style of Ivor Cutler",
+      "in the style of a 1980s computer game",
+      "in the style of an angry teenager",
+      "making heavy references to the Easter Bunny",
+    ]
+    easterEggPrompt =  funWaysOfDescribingSOmethingBoring[Math.floor(Math.random() * funWaysOfDescribingSOmethingBoring.length)];
+
+    console.log("Alright, I'll do this " + easterEggPrompt);
+
+    easterEggPrompt = " Do it " + easterEggPrompt;
+  }
   const openAiRequest = {
     model: cmd.model,
     messages: [
       {
         role: "user",
-        content: `In three sections, describe what the template does, if there are any security issues and how it can be improved: ${template}`,
+        content: `In three sections, describe what the template does, if there are any security issues and how it can be improved: ${template}.${easterEggPrompt}`,
       }
     ],
     temperature: 0.5,
