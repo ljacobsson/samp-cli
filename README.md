@@ -57,6 +57,25 @@ Options:
 ```
 ![Demo](images/demo2.gif)
 
+
+### sam-patterns console
+Launches the AWS console for the selected SAM resource. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
+
+```
+Usage: sampat console|c [options]
+
+Opens the AWS console for a deployed resource in your SAM template.
+
+Options:
+  -t, --template-file [templateFile]  Path to SAM template file (default: "template.yaml")
+  -s, --stack-name [stackName]        The name of the deployed stack
+  -p, --profile [profile]             AWS profile to use (default: "default")
+  --region [region]                   The AWS region to use. Falls back on AWS_REGION environment variable if not specified
+  -h, --help                          display help for command
+```
+
+![Demo](images/demo-console.gif
+
 ### sam-patterns generate
 Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any language based on a query to ChatGPT. If you ask for SAM resources, it will merges them into your existing template. 
 
