@@ -41,7 +41,18 @@ async function run(cmd) {
   }
   const template = parser.parse("yaml", fs.readFileSync(templateFile, "utf8"));
 
-  const resources = Object.keys(template.Resources).sort().filter(key => template.Resources[key].Type?.includes("AWS::"));
+  const resources = Object.keys(template.Resources).filter(key => template.Resources[key].Type?.includes("AWS::"));
+
+  // add lambda log groups
+  const lambdaFunctions = resources.filter(r => template.Resources[r].Type === "AWS::Serverless::Function");
+  lambdaFunctions.forEach(f => {
+    const newLocal = `${f} Logs`;
+    resources.push(newLocal);    
+    template.Resources[newLocal] = {
+      "Type": "AWS::Logs::LogGroup",
+    }
+  });
+
   if (resources.length === 0) {
     console.log("No compatible resources found in template");
     return;
@@ -51,12 +62,16 @@ async function run(cmd) {
     resource = resources[0];
   }
   else {
-    const choices = resources.map((sm, i) => { return { name: `${sm} [${template.Resources[sm].Type}]`, value: sm } });
+    const choices = resources.sort().map((sm, i) => { return { name: `${sm} [${template.Resources[sm].Type}]`, value: sm } });
     resource = await inputUtil.autocomplete("Select a resource", choices);
   }
 
   const physicalId = await getPhysicalId(cloudFormation, cmd.stackName, resource);
   try {
+    if (physicalId.startsWith("https://")) {
+      (await (open)).default(physicalId);
+      return;
+    }
     const arn = createARN(template.Resources[resource].Type, physicalId);
     (await (open)).default(new link2aws.ARN(arn).consoleLink);
   } catch (e) {
@@ -71,11 +86,20 @@ async function getPhysicalId(cloudFormation, stackName, logicalId) {
     StackName: stackName,
     LogicalResourceId: logicalId
   };
+  if (logicalId.endsWith(" Logs")) {
+    const logGroupParentResource = logicalId.split(" ")[0];
+    params.LogicalResourceId = logGroupParentResource;
+  }
 
   const response = await cloudFormation.send(new DescribeStackResourcesCommand(params));
   if (response.StackResources.length === 0) {
-    throw new Error(`No stack resource found for ${logicalId}`);
+    console.log(`No stack resource found for ${logicalId}`);
+    process.exit(1);
   }
+  if (logicalId.endsWith(" Logs")) {
+    return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:logs-insights$3FqueryDetail$3D~(end~0~start~-3600~timeType~'RELATIVE~unit~'seconds~editorString~'fields*20*40timestamp*2c*20*40message*2c*20*40logStream*2c*20*40log*0a*7c*20filter*20*40message*20like*20*2f*2f*0a*7c*20sort*20*40timestamp*20desc*0a*7c*20limit*2020~queryId~'34a281813a60369-9a1fd63a-4f33c1a-1a4a5082-43a5fa31198c9c2c4ba123e~source~(~'/aws/lambda/${response.StackResources[0].PhysicalResourceId}))`
+  }
+
   return response.StackResources[0].PhysicalResourceId;
 }
 
