@@ -9,30 +9,30 @@ const link2aws = require('link2aws');
 const open = import('open');
 let region;
 async function run(cmd) {
-  const credentials = await fromSSO({ profile: cmd.profile })();
   if (fs.existsSync("samconfig.toml")) {
     const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
     const params = config?.default?.deploy?.parameters;
-    if (params.stack_name) {
+    if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);
       cmd.stackName = params.stack_name;
     }
-    if (params.profile) {
+    if (!cmd.profile && params.profile) {
       console.log("Using AWS profile from config:", params.profile);
       cmd.profile = params.profile;
     }
-    if (params.region) {
+    if (!cmd.region && params.region) {
       console.log("Using AWS region from config:", params.region);
       cmd.region = params.region;
       region = params.region;
     }
   }
+  const credentials = await fromSSO({ profile: cmd.profile })();
   if (!cmd.stackName) {
     console.error("Missing required option: --stack-name");
     process.exit(1);
   }
 
-  const cloudFormation = new CloudFormationClient(credentials);
+  const cloudFormation = new CloudFormationClient({credentials: credentials, region: cmd.region});
 
   const templateFile = cmd.templateFile;
   if (!fs.existsSync(templateFile)) {
