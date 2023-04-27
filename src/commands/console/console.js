@@ -97,7 +97,10 @@ async function getPhysicalId(cloudFormation, stackName, logicalId) {
     process.exit(1);
   }
   if (logicalId.endsWith(" Logs")) {
-    return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:logs-insights$3FqueryDetail$3D~(end~0~start~-3600~timeType~'RELATIVE~unit~'seconds~editorString~'fields*20*40timestamp*2c*20*40message*2c*20*40logStream*2c*20*40log*0a*7c*20filter*20*40message*20like*20*2f*2f*0a*7c*20sort*20*40timestamp*20desc*0a*7c*20limit*2020~queryId~'34a281813a60369-9a1fd63a-4f33c1a-1a4a5082-43a5fa31198c9c2c4ba123e~source~(~'/aws/lambda/${response.StackResources[0].PhysicalResourceId}))`
+    const logGroup = `/aws/lambda/${response.StackResources[0].PhysicalResourceId}`;
+    const source = `$257E$2527${logGroup}`.replace(/\//g, "*2f")
+    const query = `fields*20*40timestamp*2c*20*40message*2c*20*40logStream*2c*20*40log*0a*7c*20filter*20*40message*20like*20*2f*2f*0a*7c*20sort*20*40timestamp*20desc*0a*7c*20limit*2020`;
+    return `https://${region}.console.aws.amazon.com/cloudwatch/home?region=${region}#logsV2:logs-insights$3FqueryDetail$3D$257E$2528end$257E0$257Estart$257E-3600$257EtimeType$257E$2527RELATIVE$257Eunit$257E$2527seconds$257EeditorString$257E$2527${query}$257EisLiveTail$257Efalse$257Esource$257E$2528${source}$2529$2529`
   }
 
   return response.StackResources[0].PhysicalResourceId;
