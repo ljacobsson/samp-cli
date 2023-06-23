@@ -109,10 +109,13 @@ async function invoke(cmd, sfnArn) {
       console.log("Invoking state machine with payload:", concatenateAndAddDots(cmd.payload, 100))
       const data = await sfnClient.send(params);
       const response = data.executionArn;
+      let url;
       if (response.includes(":express:")) {
-        const url = `https://${cmd.region}.console.aws.amazon.com/states/home?region=${cmd.region}#/express-executions/details/${response}?startDate=${data.startDate.getTime()}`
-        console.log("Started:", url);
+        url = `https://${cmd.region}.console.aws.amazon.com/states/home?region=${cmd.region}#/express-executions/details/${response}?startDate=${data.startDate.getTime()}`
+      } else {
+        url = `https://${cmd.region}.console.aws.amazon.com/states/home?region=${cmd.region}#/v2/executions/details/${response}`;
       }
+      console.log("Started:", url);
     }
     catch (err) {
       console.log("Error", err);
