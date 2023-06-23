@@ -44,6 +44,32 @@ Options:
 ```
 ![Demo](images/demo.gif)
 
+
+### sam-patterns invoke
+Invokes a Lambda function or StepFunctions state machine in your CloudFormation stack. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
+
+You can pass a variety of inputs to the function / state machine:
+* A path to a local JSON file
+* JSON string
+* [Shared Lambda test event](https://docs.aws.amazon.com/lambda/latest/dg/testing-functions.html#:~:text=test%20event.-,Shareable%20test%20events,-Shareable%20test%20events). These test events become available for other developers with access to the same AWS account. This command also introduces the same sharable test events for StepFunctions.
+* For StepFunctions, you can select to re-run the input from a recent execution from the state machine.
+
+```
+Usage: sampat invoke|in [options]
+
+Invokes a Lambda function or a StepFunctions state machine
+
+Options:
+  -s, --stack-name [stackName]  The name of the deployed stack. Optional if a samconfig.toml file is present
+  -pl, --payload [payload]      The payload to send to the function. Could be stringified JSON,
+                                a file path to a JSON file or the name of a shared test event. Optional
+  -p, --profile [profile]       AWS profile to use. Optional (default: "default")
+  --region [region]             The AWS region to use. Falls back on AWS_REGION environment
+                                variable if not specified
+  -h, --help                    display help for command
+  ```
+
+
 ### sam-patterns explore
 Lets you browse and explore your serverless patterns repositories. 
 

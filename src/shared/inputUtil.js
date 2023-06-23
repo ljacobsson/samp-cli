@@ -1,6 +1,6 @@
 const inquirer = require("inquirer");
 const inquirerFileTreeSelection = require("inquirer-file-tree-selection-prompt");
-
+const fs = require("fs");
 inquirer.registerPrompt("file-tree-selection", inquirerFileTreeSelection);
 inquirer.registerPrompt(
   "autocomplete",
@@ -38,9 +38,31 @@ async function files(message) {
       type: "file-tree-selection",
       name: "files",
       message: message,
-      multiple: true
+      multiple: true,
     })
   ).files;
+}
+
+async function file(message, filter) {
+  let result;
+  do {
+
+    result = (await inquirer.prompt({
+      type: "file-tree-selection",
+      name: "file",
+      message: message,
+      multiple: false,
+      onlyShowValid: true,
+      validate: function (answer) {
+        if (fs.lstatSync(answer).isDirectory()) {
+          return true;
+        }
+        return answer.endsWith(filter);
+      }
+    })
+    ).file;
+  } while (fs.lstatSync(result).isDirectory());
+  return result;
 }
 
 async function text(message, defaultValue) {
@@ -69,12 +91,12 @@ async function checkbox(message, items, defaults) {
   return list;
 }
 
-async function prompt(message) {
+async function prompt(message, defaultValue) {
   return (
     await inquirer.prompt({
       type: "confirm",
       name: "choice",
-      default: "Yes",
+      default: defaultValue || "Yes",
       message: message,
     })
   ).choice;
@@ -87,4 +109,5 @@ module.exports = {
   text,
   prompt,
   files,
+  file
 };
