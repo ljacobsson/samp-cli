@@ -44,6 +44,32 @@ Options:
 ```
 ![Demo](images/demo.gif)
 
+
+### sam-patterns invoke
+Invokes a Lambda function or StepFunctions state machine in your CloudFormation stack. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
+
+You can pass a variety of inputs to the function / state machine:
+* A path to a local JSON file
+* JSON string
+* [Shared Lambda test event](https://docs.aws.amazon.com/lambda/latest/dg/testing-functions.html#:~:text=test%20event.-,Shareable%20test%20events,-Shareable%20test%20events). These test events become available for other developers with access to the same AWS account. This command also introduces the same sharable test events for StepFunctions.
+* For StepFunctions, you can select to re-run the input from a recent execution from the state machine.
+
+```
+Usage: sampat invoke|in [options]
+
+Invokes a Lambda function or a StepFunctions state machine
+
+Options:
+  -s, --stack-name [stackName]  The name of the deployed stack. Optional if a samconfig.toml file is present
+  -pl, --payload [payload]      The payload to send to the function. Could be stringified JSON,
+                                a file path to a JSON file or the name of a shared test event. Optional
+  -p, --profile [profile]       AWS profile to use. Optional (default: "default")
+  --region [region]             The AWS region to use. Falls back on AWS_REGION environment
+                                variable if not specified
+  -h, --help                    display help for command
+  ```
+
+
 ### sam-patterns explore
 Lets you browse and explore your serverless patterns repositories. 
 
@@ -56,6 +82,25 @@ Options:
   -h, --help  display help for command
 ```
 ![Demo](images/demo2.gif)
+
+
+### sam-patterns console
+Launches the AWS console for the selected SAM resource. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
+
+```
+Usage: sampat console|c [options]
+
+Opens the AWS console for a deployed resource in your SAM template.
+
+Options:
+  -t, --template-file [templateFile]  Path to SAM template file (default: "template.yaml")
+  -s, --stack-name [stackName]        The name of the deployed stack
+  -p, --profile [profile]             AWS profile to use (default: "default")
+  --region [region]                   The AWS region to use. Falls back on AWS_REGION environment variable if not specified
+  -h, --help                          display help for command
+```
+
+![Demo](images/demo-console.gif
 
 ### sam-patterns generate
 Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any language based on a query to ChatGPT. If you ask for SAM resources, it will merges them into your existing template. 
@@ -82,10 +127,26 @@ Options:
 #### Examples
 * To generate SAM resources for a Lambda function that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table"`
 * To generate a CDK stack for the same: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
-* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "read an item from a dynamodb table" --output lambda-rust --output-file lambda.py`
-* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "read an item from a dynamodb table" --output ASL --output-file asl.yaml`
+* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output lambda-rust --output-file lambda.py`
+* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output ASL --output-file asl.yaml`
 
 Note that quality of results may vary and that you sometimes have to run the command a few times to get a good result.
+
+### sam-patterns describe
+Describes a pattern using ChatGPT and gives suggestions on how to improve security.
+
+```
+Usage: sampat describe|d [options]
+
+Describes a SAM template using ChatGPT
+
+Options:
+  -t, --template [template]           SAM template file (default: "template.yaml")
+  -r, --repository-path [repository]  Github repository path, i.e "aws-samples/serverless-patterns/apigw-sfn"
+  -m, --model [model]                 OpenAI model to use. Valid values are 'gpt-3.5-turbo' and 'gpt-4'. Note that gpt-3.5-turbo is fine for most use cases and that gpt-4 is slower and more expensive (default: "gpt-3.5-turbo")
+  -h, --help                          display help for command
+```
+
 
 ### sam-patterns source
 Lets you add more sources. This could be public repositories, such as Jeremy Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
