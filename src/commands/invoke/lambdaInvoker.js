@@ -8,8 +8,10 @@ async function invoke(cmd, resourceName) {
   const lambdaClient = new LambdaClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
   const schemasClient = new SchemasClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
   if (!cmd.payload) {
-    const payloadSource = await inputUtil.list("Select a payload source", ["Local JSON file", "Shared test event", "Input JSON"]);
-    if (payloadSource === "Local JSON file") {
+    const payloadSource = await inputUtil.list("Select a payload source", ["Empty JSON", "Local JSON file", "Shared test event", "Input JSON"]);
+    if (payloadSource === "Empty JSON") {
+      cmd.payload = "{}";
+    } else if (payloadSource === "Local JSON file") {
       cmd.payload = await inputUtil.file("Select file(s) to use as payload", "json");
     } else if (payloadSource === "Shared test event") {
       try {

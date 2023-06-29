@@ -10,8 +10,10 @@ async function invoke(cmd, sfnArn) {
   const schemasClient = new SchemasClient({ credentials: await fromSSO({ profile: cmd.profile }) });
   const stateMachineName = sfnArn.split(":").pop();
   if (!cmd.payload) {
-    const payloadSource = await inputUtil.list("Select a payload source", ["Local JSON file", "Shared test event", "Recent execution history", "Input JSON"]);
-    if (payloadSource === "Local JSON file") {
+    const payloadSource = await inputUtil.list("Select a payload source", ["Empty JSON", "Local JSON file", "Shared test event", "Recent execution history", "Input JSON"]);
+    if (payloadSource === "Empty JSON") {
+      cmd.payload = "{}";
+    } else if (payloadSource === "Local JSON file") {
       cmd.payload = await inputUtil.file("Select file(s) to use as payload", "json");
     } else if (payloadSource === "Shared test event") {
       try {

@@ -1,7 +1,6 @@
 const runner = require('./runner');
 const { exec } = require('child_process');
 const fs = require('fs');
-const { initial } = require('lodash');
 async function run(cmd) {
   if (cmd.forceRestore) {
     await runner.stop();
@@ -14,18 +13,19 @@ async function run(cmd) {
     return;
   }
 
+  else if (cmd.functions && cmd.functions !== "ALL") {
+    cmd.functions = cmd.functions.split(",").map(f => f.trim());
+    process.env.includeFunctions = cmd.functions;
+  }
+ 
   let initialised = false;
   if (fs.existsSync("tsconfig.json")) {
-    const tsconfig = JSON.parse(fs.readFileSync("tsconfig.json", "utf8"));
-    if (tsconfig?.compilerOptions?.outDir) {
-      console.log("Using outDir from tsconfig.json:", tsconfig.compilerOptions.outDir);
-      process.env.outDir = tsconfig.compilerOptions.outDir;
-    } else {
-      console.error("Missing outDir in tsconfig.json");
-      process.exit(1);
-    }
-
-    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch`, {});
+    let fileContent = fs.readFileSync("tsconfig.json", "utf8");
+    // remove // comments
+    fileContent = fileContent.replace(/\/\/.*/g, '');
+    const tsconfig = JSON.parse(fileContent);
+    process.env.outDir = tsconfig.compilerOptions.outDir || ".samp-out";
+    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
     tscProcess.stdout.on('data', (data) => {
       console.log("tsc: ", data.toString().replace(/\n$/, ''));
       if (data.toString().includes("Watching for file changes") && !initialised) {
@@ -72,7 +72,9 @@ function setupDebug() {
   let launchJson;
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
     console.log("launch.json already exists");
-    launchJson = JSON.parse(fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8"));
+    let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
+    fileContent = fileContent.replace(/\/\/.*/g, '');
+    launchJson = JSON.parse(fileContent);
   } else {
     launchJson = {
       "version": "0.2.0",
@@ -120,7 +122,7 @@ function setupDebug() {
   } else {
     tasksJson = {
       "version": "2.0.0",
-      "tasks": [ task ]
+      "tasks": [task]
     };
   }
   if (!fs.existsSync(`${pwd}/.vscode`)) {
