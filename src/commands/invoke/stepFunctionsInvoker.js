@@ -99,7 +99,8 @@ async function invoke(cmd, sfnArn) {
   }
 
   if (isValidJson(cmd.payload)) {
-    const executionName = await inputUtil.text("Enter a name for the execution", "test-execution");
+    let executionName = await inputUtil.text("Enter a name for the execution", "test-execution");
+    executionName = executionName.replace(/[^a-zA-Z0-9-_]/g, "-");
     const params = new StartExecutionCommand({
       stateMachineArn: sfnArn,
       input: cmd.payload,
