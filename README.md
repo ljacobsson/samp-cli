@@ -11,7 +11,7 @@
 _CLI tool that takes your AWS SAM development to the next level_
 
                                             
-This is the continuation of the now deprecated `samp-cli` tool. It has been renamed to Sam Plus (`samp`) which better reflects the direction of the tool, namely to offer additional developer tooling beyond the realm of [sam-cli](https://github.com/aws/aws-sam-cli). Please note that this is not a replacement for `sam-cli`.
+This is the continuation of the now deprecated `sam-patterns-cli` tool. It has been renamed to Sam Plus (`samp`) which better reflects the direction of the tool, namely to offer additional developer tooling beyond the realm of [sam-cli](https://github.com/aws/aws-sam-cli). Please note that this is not a replacement for `sam-cli`.
 
 ## Installation
 `npm install -g samp-cli`
