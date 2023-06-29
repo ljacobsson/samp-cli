@@ -1,7 +1,12 @@
 const runner = require('./runner');
 const { exec } = require('child_process');
 const fs = require('fs');
+const inputUtil = require('../../shared/inputUtil');
+const settingsUtil = require('../../shared/settingsUtil');
 async function run(cmd) {
+
+  await warn();
+
   if (cmd.forceRestore) {
     await runner.stop();
     return;
@@ -131,6 +136,19 @@ function setupDebug() {
 
   fs.writeFileSync(`${pwd}/.vscode/launch.json`, JSON.stringify(launchJson, null, 2));
   fs.writeFileSync(`${pwd}/.vscode/tasks.json`, JSON.stringify(tasksJson, null, 2));
+}
+
+async function warn() {
+  const settings = settingsUtil.getConfigSource();
+  if (!settings.sampLocalWarned) {
+    console.log("Warning: This command will make changes to your deployed function configuration in AWS for the duration of your debugging session. Please ONLY run this against a development environment. To learn more about the changes made, please visit https://github.com/ljacobsson/samp-cli#how-does-it-work");
+    const answer = await inputUtil.prompt("Warn again next time?");
+    if (!answer) {
+      settings.sampLocalWarned = true;
+      console.log(settings);
+      settingsUtil.saveConfigSource(settings)
+    }
+  }
 }
 
 module.exports = {
