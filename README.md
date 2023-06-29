@@ -100,7 +100,7 @@ Options:
 The `--force-restore` flag is useful if you want to restore the original Lambda code in the cloud after you've finished debugging. This is normally done automatically when you finish your session (CTRL+C), but in the case of a crash or unexpected exit, you can use this flag to restore the original code.
 
 #### Debugging with VS Code
-
+In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
 
 ### samp explore
 Lets you browse and explore your serverless patterns repositories. 
