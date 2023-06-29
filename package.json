@@ -1,34 +1,33 @@
 {
-  "name": "sam-patterns-cli",
-  "version": "0.0.51",
-  "description": "Command line interface for quickly using patterns from https://github.com/aws-samples/serverless-patterns/",
+  "name": "samp-cli",
+  "version": "1.0.0",
+  "description": "CLI tool for extended productivity with AWS Serverless Application Model (SAM)",
   "main": "index.js",
   "scripts": {
     "test": "jest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mhlabs/sam-patterns-cli.git"
+    "url": "git+https://github.com/ljacobsson/samp-cli.git"
   },
   "keywords": [
     "aws",
     "serverless",
-    "design patterns"
+    "design patterns",
+    "sam"
   ],
-  "author": "mhlabs",
+  "author": "ljacobsson",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/mhlabs/sam-patterns-cli/issues"
+    "url": "https://github.com/ljacobsson/samp-cli/issues"
   },
   "bin": {
-    "serverless-patterns": "index.js",
-    "sam-patterns": "index.js",
-    "sampat": "index.js"
+    "samp": "index.js"
   },
   "publishConfig": {
     "access": "public"
   },
-  "homepage": "https://github.com/mhlabs/sam-patterns-cli#readme",
+  "homepage": "https://github.com/ljacobsson/samp-cli#readme",
   "dependencies": {
     "@aws-sdk/client-cloudformation": "^3.319.0",
     "@aws-sdk/client-lambda": "^3.358.0",
@@ -47,11 +46,14 @@
     "inquirer-autocomplete-prompt": "^1.3.0",
     "inquirer-file-tree-selection-prompt": "^1.0.13",
     "jsonpath": "^1.1.1",
+    "lambda-debug": "^1.0.20",
     "link2aws": "^1.0.13",
     "lodash": "^4.17.21",
+    "nodemon": "^2.0.22",
     "nunjucks": "^3.2.3",
     "open": "^7.4.2",
-    "openai": "^3.2.1",
+    "openai": "^3.3.0",
+    "tsc-watch": "^6.0.4",
     "yaml-cfn": "^0.3.0"
   },
   "devDependencies": {

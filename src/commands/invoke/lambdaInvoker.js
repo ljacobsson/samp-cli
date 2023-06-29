@@ -5,8 +5,8 @@ const fs = require('fs');
 const inputUtil = require('../../shared/inputUtil');
 
 async function invoke(cmd, resourceName) {
-  const lambdaClient = new LambdaClient({ credentials: await fromSSO({ profile: cmd.profile }) });
-  const schemasClient = new SchemasClient({ credentials: await fromSSO({ profile: cmd.profile }) });
+  const lambdaClient = new LambdaClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
+  const schemasClient = new SchemasClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
   if (!cmd.payload) {
     const payloadSource = await inputUtil.list("Select a payload source", ["Local JSON file", "Shared test event", "Input JSON"]);
     if (payloadSource === "Local JSON file") {

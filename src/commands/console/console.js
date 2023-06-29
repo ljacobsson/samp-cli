@@ -75,7 +75,7 @@ async function run(cmd) {
     const arn = createARN(template.Resources[resource].Type, physicalId);
     (await (open)).default(new link2aws.ARN(arn).consoleLink);
   } catch (e) {
-    console.log(`Can't create a console link for resource type ${template.Resources[resource].Type}. Please create an issue: https://github.com/ljacobsson/sam-patterns-cli/issues/new`);
+    console.log(`Can't create a console link for resource type ${template.Resources[resource].Type}. Please create an issue: https://github.com/ljacobsson/samp-cli/issues/new`);
     return;
   }
 

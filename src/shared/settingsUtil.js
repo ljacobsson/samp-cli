@@ -2,8 +2,13 @@ const fs = require("fs");
 const os = require("os");
 const path = require("path");
 
-const settingsPath = path.join(os.homedir(), ".sam-patterns-cli");
+const settingsPath = path.join(os.homedir(), ".samp-cli");
+const legacySettingsPath = path.join(os.homedir(), ".sam-patterns-cli");
 const settingsFilePath = path.join(settingsPath, "settings.json");
+
+if (fs.existsSync(legacySettingsPath) && !fs.existsSync(settingsPath)) {
+  fs.renameSync(legacySettingsPath, settingsPath);
+}
 
 function savePatternSource(settings) {
   let settingsObj = {

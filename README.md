@@ -1,23 +1,32 @@
-# sam-patterns-cli
+```
+                                            
+                                     λλ\    
+ λλλλλλλ\  λλλλλλ\  λλλλλλ\λλλλ\     λλ |   
+λλ  _____| \____λλ\ λλ  _λλ  _λλ\ λλλλλλλλ\ 
+\λλλλλλ\   λλλλλλλ |λλ / λλ / λλ |\__λλ  __|
+ \____λλ\ λλ  __λλ |λλ | λλ | λλ |   λλ |   
+λλλλλλλ  |\λλλλλλλ |λλ | λλ | λλ |   \__|   
+\_______/  \_______|\__| \__| \__|          
+```
+_CLI tool that takes your AWS SAM development to the next level_
 
-*Note: this is an early version of a CLI backed by an early version of a community driven resource; https://serverlessland.com/patterns/. There might be bugs*
-
-This tool lets you browse the content of the [Serverless Patterns Collection](https://serverlessland.com/patterns/) and [Serverless Workflow Collection](https://serverlessland.com/workflows/) and inject patterns directly into your SAM template. Support for both JSON and YAML.
+                                            
+This is the continuation of the now deprecated `samp-cli` tool. It has been renamed to Sam Plus (`samp`) which better reflects the direction of the tool, namely to offer additional developer tooling beyond the realm of [sam-cli](https://github.com/aws/aws-sam-cli). Please note that this is not a replacement for `sam-cli`.
 
 ## Installation
-`npm install -g sam-patterns-cli`
+`npm install -g samp-cli`
 
-Acquire a Github access token from [here](https://github.com/settings/tokens) and either store it in environment variable `GITHUB_TOKEN` or configure the tool using `sam-patterns configure --github-token <token>` (recommended). This is not strictly required, but if you don't you'll be rate limited to 60 requests per hour. Note that SSH auth is not supported by by the OctoKit SDK.
+Acquire a Github access token from [here](https://github.com/settings/tokens) and either store it in environment variable `GITHUB_TOKEN` or configure the tool using `samp configure --github-token <token>` (recommended). This is not strictly required, but if you don't you'll be rate limited to 60 requests per hour. Note that SSH auth is not supported by by the OctoKit SDK.
 
 ## Usage
 
-### sam-patterns init
+### samp init
 Initialises a SAM project based on a cookiecutter template. By default the tool gives access to the same [AWS managed templates](https://github.com/aws/aws-sam-cli-app-templates) that are used by [sam-cli](https://github.com/aws/aws-sam-cli).
 
 You can add custom template locations by using the `--add-repository` flag.
 
 ```
-Usage: sam-patterns init [options]
+Usage: samp init [options]
 
 Initialises a SAM project from a quick-start template. See https://github.com/aws/aws-sam-cli-app-templates for examples and structure.
 
@@ -27,11 +36,11 @@ Options:
 ```
 ![Demo](images/init.gif)
 
-### sam-patterns import
+### samp import
 Imports a serverless pattern into an existing template. You can merge one or more resources in the imported pattern with existing resources in your template by adding the `--merge` flag to, for example, combine `sqs-lambda` and `lambda-dynamodb` as one `sqs-lambda-dynamodb` pattern. 
 
 ```
-Usage: sam-patterns import|i [options]
+Usage: samp import|i [options]
 
 Imports a pattern from https://github.com/aws-samples/serverless-patterns/
 
@@ -45,7 +54,7 @@ Options:
 ![Demo](images/demo.gif)
 
 
-### sam-patterns invoke
+### samp invoke
 Invokes a Lambda function or StepFunctions state machine in your CloudFormation stack. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
 
 You can pass a variety of inputs to the function / state machine:
@@ -69,12 +78,35 @@ Options:
   -h, --help                    display help for command
   ```
 
+### samp local
+ This lets you test your Lambda functions locally with real events from your AWS account. You can step through your code using breakpoints and enjoy sub-second code reloads on changes. If a `samconfig.toml` file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
 
-### sam-patterns explore
+ * NOTE: this command temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). Please only use on development stacks. Never use on production functions! *
+
+```
+Usage: sampat local|l [options]
+
+Sets up a debugging session where the Lambda invocations in the cloud gets executed on your local machine
+
+Options:
+  -s, --stack-name [stackName]  The name of the deployed stack
+  -fr, --force-restore          Force restore of the original Lambda code (default: false)
+  -p, --profile [profile]       AWS profile to use
+  --region [region]             The AWS region to use. Falls back on AWS_REGION environment variable if not
+                                specified
+  -h, --help                    display help for command
+```
+
+The `--force-restore` flag is useful if you want to restore the original Lambda code in the cloud after you've finished debugging. This is normally done automatically when you finish your session (CTRL+C), but in the case of a crash or unexpected exit, you can use this flag to restore the original code.
+
+#### Debugging with VS Code
+
+
+### samp explore
 Lets you browse and explore your serverless patterns repositories. 
 
 ```
-Usage: sam-patterns explore|e [options]
+Usage: samp explore|e [options]
 
 Explores and visualises patterns from https://github.com/aws-samples/serverless-patterns/
 
@@ -84,7 +116,7 @@ Options:
 ![Demo](images/demo2.gif)
 
 
-### sam-patterns console
+### samp console
 Launches the AWS console for the selected SAM resource. If a samconfig.toml file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
 
 ```
@@ -102,7 +134,7 @@ Options:
 
 ![Demo](images/demo-console.gif
 
-### sam-patterns generate
+### samp generate
 Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any language based on a query to ChatGPT. If you ask for SAM resources, it will merges them into your existing template. 
 
 This is an experimental feature and requires a ChatGPT API key. You can get one [here](https://platform.openai.com/account/api-keys). Make sure to validate the output before deploying your template as it might contain errors or things that could incur cost 
@@ -125,14 +157,14 @@ Options:
 ![Demo](images/demo-gpt.gif)
 
 #### Examples
-* To generate SAM resources for a Lambda function that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table"`
-* To generate a CDK stack for the same: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
-* To generate a Lambda function in Rust that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output lambda-rust --output-file lambda.py`
-* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `sam-patterns generate -q "a lambda function that reads off a dynamodb table" --output ASL --output-file asl.yaml`
+* To generate SAM resources for a Lambda function that reads off a DynamoDB table: `samp generate -q "a lambda function that reads off a dynamodb table"`
+* To generate a CDK stack for the same: `samp generate -q "a lambda function that reads off a dynamodb table" --output CDK --output-file cdk-stack.ts`
+* To generate a Lambda function in Rust that reads off a DynamoDB table: `samp generate -q "a lambda function that reads off a dynamodb table" --output lambda-rust --output-file lambda.py`
+* To generate a StepFunctions ASL definition that reads off a DynamoDB table: `samp generate -q "a lambda function that reads off a dynamodb table" --output ASL --output-file asl.yaml`
 
 Note that quality of results may vary and that you sometimes have to run the command a few times to get a good result.
 
-### sam-patterns describe
+### samp describe
 Describes a pattern using ChatGPT and gives suggestions on how to improve security.
 
 ```
@@ -148,7 +180,7 @@ Options:
 ```
 
 
-### sam-patterns source
+### samp source
 Lets you add more sources. This could be public repositories, such as Jeremy Daly's [Serverless Reference Architectures](https://www.jeremydaly.com/serverless-reference-architectures/) or a private repository for company specific patterns.
 
 Example how to add Jeremy Daly's reference architectures as a source:
@@ -160,7 +192,7 @@ Example how to add Jeremy Daly's reference architectures as a source:
 ? Template filename(s): template.yaml,template.yml
 ? URL (use #PATTERN_NAME# as placeholder): https://jeremydaly.com/the-#PATTERN_NAME#-pattern
 ```
-The configuration gets stored in `~/.sam-patterns-cli/settings.json`
+The configuration gets stored in `~/.samp-cli/settings.json`
 
 If you create your own collection you need to follow this structure:
 ```
@@ -176,11 +208,11 @@ If you create your own collection you need to follow this structure:
     └── template.yaml
 ```
 
-### sam-patterns policy
+### samp policy
 Lets you quickly build IAM polices, find SAM policy templates or generate SAM Connectors based on the resources you have in your template. The generated policy can be attached to supported resource types.
 
 ```
-Usage: sam-patterns policy|p [options]
+Usage: samp policy|p [options]
 
 Opens a wizard thet help you to create and attach a new IAM policy to a resource in your template
 
@@ -192,7 +224,7 @@ Options:
 ```
 ![Demo](images/policy-demo.gif)
 
-### sam-patterns return-values
+### samp return-values
 Lets you browse the return values of a resource and send the intrinsic function that retrieves it to your stdout or clipboard
 
 ```
@@ -206,7 +238,7 @@ Options:
   -h, --help                 display help for command
 ```
 
-### sam-patterns share
+### samp share
 Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.
 
 #### Example usage
@@ -217,7 +249,7 @@ In this example we have a stack with the following resources:
 * EventRule [AWS::Events::Rule]
 * EventBridgeToToSnsPolicy [AWS::SNS::TopicPolicy]
 
-We've identified that `OrderPutFunction` and `OrderTable` together make up a reusable pattern that we want to share, so we run `sam-patterns share`:
+We've identified that `OrderPutFunction` and `OrderTable` together make up a reusable pattern that we want to share, so we run `samp share`:
 
 ![Demo](images/share-select-components.png)
 
@@ -237,9 +269,9 @@ We want to change some default values of some properties or make some values cus
 
 ![Demo](images/share-modify-properties.gif)
 
-Once done, hit `Done`, select a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [sam-patterns source](https://github.com/mhlabs/sam-patterns-cli#sam-patterns-source) on how to link repositories.
+Once done, hit `Done`, select a name for the pattern and a source where to commit it to. Note that your GITHUB_TOKEN needs permission to push to the selected repository. Refer to [samp source](https://github.com/ljacobsson/samp-cli#samp-source) on how to link repositories.
 
-The new pattern has now been pushed and is ready to be used by someone else using `sam-patterns import`
+The new pattern has now been pushed and is ready to be used by someone else using `samp import`
 ![Demo](images/import-example.gif)
 
 *NOTE* If you create patterns that aren't specific to your business use cases, please consider sharing them with the community over at [Serverless Pattern Collection](https://serverlessland.com/patterns/)

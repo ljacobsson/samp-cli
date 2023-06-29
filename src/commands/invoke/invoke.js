@@ -12,7 +12,7 @@ let region;
 async function run(cmd) {
   if (fs.existsSync("samconfig.toml")) {
     const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
-    const params = config?.default?.deploy?.parameters;
+    const params = { ...config?.default?.deploy?.parameters, ...(config?.default?.global?.parameters || {})};
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);
       cmd.stackName = params.stack_name;

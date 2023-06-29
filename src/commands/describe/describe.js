@@ -12,7 +12,7 @@ async function run(cmd) {
   const apiKey = settingsUtil.getConfigSource().openaiApiKey;
   if (!apiKey) {
     console.log(
-      "You need to set your OpenAI API key. Use the 'sam-patterns configure' command to do this. You can get your API key from https://platform.openai.com/account/api-keys"
+      "You need to set your OpenAI API key. Use the 'samp configure' command to do this. You can get your API key from https://platform.openai.com/account/api-keys"
     );
     return;
   }
