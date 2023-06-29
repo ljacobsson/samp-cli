@@ -102,6 +102,11 @@ The `--force-restore` flag is useful if you want to restore the original Lambda 
 #### Debugging with VS Code
 In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
 
+#### How does it work?
+The tool temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). The functions are automatically restored when you exit the debugging session with the values in your processed CloudFormation tempate. The tool also sets the MemorySize to 128MB and Timeout to 60 seconds to avoid timeouts during debugging as well as saving cost.
+
+Should you encounter any issues during the restoration of the original function code, you can use the `--force-restore` flag to restore the original code manually. Failing that, you can always redeploy your stack to restore the original code.
+
 ### samp explore
 Lets you browse and explore your serverless patterns repositories. 
 
