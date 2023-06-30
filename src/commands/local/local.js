@@ -22,7 +22,7 @@ async function run(cmd) {
     cmd.functions = cmd.functions.split(",").map(f => f.trim());
     process.env.includeFunctions = cmd.functions;
   }
- 
+
   let initialised = false;
   if (fs.existsSync("tsconfig.json")) {
     let fileContent = fs.readFileSync("tsconfig.json", "utf8");
@@ -36,21 +36,15 @@ async function run(cmd) {
       if (data.toString().includes("Watching for file changes") && !initialised) {
         initialised = true;
         const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
-        childProcess.stdout.on('data', (data) => {
-          if (!process.env.muteParentOutput) {
-            console.log(data.toString().replace(/\n$/, ''));
-          }
-        });
+        childProcess.stdout.on('data', (data) => print(data));
+        childProcess.stderr.on('data', (data) => print(data));
       }
     });
 
   } else {
     const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
-    childProcess.stdout.on('data', (data) => {
-      if (!process.env.muteParentOutput) {
-        console.log(data.toString().replace(/\n$/, ''));
-      }
-    });
+    childProcess.stdout.on('data', (data) => print(data));
+    childProcess.stderr.on('data', (data) => print(data));
   }
 
   // catch ctrl+c event and exit normally
@@ -70,6 +64,12 @@ async function run(cmd) {
     console.log('exit...');
     await runner.stop();
   });
+}
+
+function print(data) {
+  if (!process.env.muteParentOutput) {
+    console.error(data.toString().replace(/\n$/, ''));
+  }
 }
 
 function setupDebug() {
