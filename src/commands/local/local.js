@@ -25,11 +25,10 @@ async function run(cmd) {
 
   let initialised = false;
   if (fs.existsSync("tsconfig.json")) {
+    process.env.outDir = ".samp-out";
     let fileContent = fs.readFileSync("tsconfig.json", "utf8");
     // remove // comments
     fileContent = fileContent.replace(/\/\/.*/g, '');
-    const tsconfig = JSON.parse(fileContent);
-    process.env.outDir = tsconfig.compilerOptions.outDir || ".samp-out";
     const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
     tscProcess.stdout.on('data', (data) => {
       console.log("tsc: ", data.toString().replace(/\n$/, ''));
@@ -40,7 +39,6 @@ async function run(cmd) {
         childProcess.stderr.on('data', (data) => print(data));
       }
     });
-
   } else {
     const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
     childProcess.stdout.on('data', (data) => print(data));
