@@ -103,16 +103,18 @@ This lets you test your Lambda functions locally with real events from your AWS 
 * NOTE #2: this command does not fully support Lambda layers. If you use layers to bundle your dependencies, you will have to manually install them locally as well. If you use layers to share custom code between functions, create a symlink from `/opt/nodejs` to the layer folder in your function folder.
 
 ```
-Usage: sampat local|l [options]
+Usage: samp local|l [options]
 
 Sets up a debugging session where the Lambda invocations in the cloud gets executed on your local machine
 
 Options:
   -s, --stack-name [stackName]  The name of the deployed stack
-  -fr, --force-restore          Force restore of the original Lambda code (default: false)
+  --force-restore               Force restore of the original Lambda code (default: false)
+  --merge-package-jsons         For projects that use one project.json per function subfolder, this merges them into one to enable package resolution whilsh running this command (default: false)
+  -f, --functions [functions]   Select which functions to be part of the debugging session. Comma separated list of logical IDs. (default: "ALL")
+  -d, --debug                   Configure debug for vscode. This only needs to be run once per project (default: false)
   -p, --profile [profile]       AWS profile to use
-  --region [region]             The AWS region to use. Falls back on AWS_REGION environment variable if not
-                                specified
+  --region [region]             The AWS region to use. Falls back on AWS_REGION environment variable if not specified
   -h, --help                    display help for command
 ```
 
