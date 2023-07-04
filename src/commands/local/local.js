@@ -1,9 +1,20 @@
 const runner = require('./runner');
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
 const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
+const glob = require('glob');
+
 async function run(cmd) {
+
+  if (cmd.mergePackageJsons) {
+    await mergePackageJsons();
+  }
+
+  if (!validate()) {
+    return;
+  }
 
   await warn();
 
@@ -139,7 +150,7 @@ function setupDebug() {
 async function warn() {
   const settings = settingsUtil.getConfigSource();
   if (!settings.sampLocalWarned) {
-    console.log("Warning: This command will make changes to your deployed function configuration in AWS for the duration of your debugging session. Please ONLY run this against a development environment. To learn more about the changes made, please visit https://github.com/ljacobsson/samp-cli#how-does-it-work");
+    console.log("Warning: This command will make changes to your deployed function configuration in AWS for the duration of your debugging session.\n\nPlease ONLY run this against a development environment.\n\nTo learn more about the changes made, please visit https://github.com/ljacobsson/samp-cli#how-does-it-work\n");
     const answer = await inputUtil.prompt("Warn again next time?");
     if (!answer) {
       settings.sampLocalWarned = true;
@@ -147,6 +158,59 @@ async function warn() {
       settingsUtil.saveConfigSource(settings)
     }
   }
+}
+
+function validate() {
+  if (!fs.existsSync("package.json")) {
+    console.log("Warning - no package.json found. This command expects a package.json file to exist in the project root directory. If you use one package.json per function sub-folder, please run 'samp local --merge-package-jsons' to create a package.json file in the project root directory followed by npm install");
+    return true;
+  }
+
+  const package = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  if (package.dependencies && Object.keys(package.dependencies).length) {
+    if (!fs.existsSync("node_modules")) {
+      console.log("No node_modules found. Please run 'npm install' before running this command");
+      return false;
+    }
+  }
+
+  if (!fs.existsSync("samconfig.toml")) {
+    console.log("No samconfig.toml found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
+    return false;
+  }
+
+  return true;
+}
+
+async function mergePackageJsons() {
+  if (fs.existsSync("package.json")) {
+    console.log("package.json already exists. Please remove or rename it and run this command again");
+    process.exit(1);
+  }
+
+  const packageJsonFiles = glob.sync('**/package.json', {
+    ignore: ['**/node_modules/**']
+  });
+
+  const dependencies = {};
+
+  for (const file of packageJsonFiles) {
+    const filePath = path.resolve(file);
+    const contents = fs.readFileSync(filePath, 'utf8');
+    const packageJson = JSON.parse(contents);
+    const packageDependencies = packageJson.dependencies || {};
+
+    Object.assign(dependencies, packageDependencies);
+  }
+
+  const mergedPackageJson = {
+    dependencies
+  };
+
+  const outputPath = path.resolve('package.json');
+  fs.writeFileSync(outputPath, JSON.stringify(mergedPackageJson, null, 2));
+
+  console.log(`Merged dependencies written to ${outputPath}`);
 }
 
 module.exports = {
