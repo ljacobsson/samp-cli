@@ -3,17 +3,16 @@ const cdk = require('aws-cdk-lib');
 const fs = require('fs');
 const { yamlDump } = require('yaml-cfn');
 let stackFile = fs.readFileSync(`${process.cwd()}/${process.argv[2]}`, 'utf8');
-stackFile = stackFile.replace(/\.ts"/g, '.js"');
+stackFile = stackFile.replace(/\.ts"/g, '.js"').replace(/\.ts'/g, ".js'");
 fs.writeFileSync(`${process.cwd()}/${process.argv[2]}`, stackFile);
 const TargetStack = require(`${process.cwd()}/${process.argv[2]}`);
-const stackName = Object.keys(TargetStack)[0];
-process.env.SAMP_STACKNAME = stackName;
-const templatePath = `${process.cwd()}/cdk.out/${stackName}.template.json`;
+const className = Object.keys(TargetStack)[0];
+
+const templatePath = `${process.cwd()}/cdk.out/${process.env.SAMP_STACKNAME}.template.json`;
 const synthedTemplate = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
 
-console.log("TargetStack: ", stackName);
 const app = new cdk.App();
-const stack = new TargetStack[stackName](null, stackName, {});
+const stack = new TargetStack[className](null, process.env.SAMP_STACKNAME, {});
 
 const resources = stack.node._children;
 

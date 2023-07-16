@@ -124,9 +124,13 @@ async function setupDebug() {
   let stack  = null;
   if (fs.existsSync(`cdk.json`)) {
     const constructs = findConstructs();
+    constructs.push("Enter manually");
     const construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
+    if (construct === "Enter manually") {
+      construct = await inputUtil.autocomplete("Which stack construct do you want to debug?");
+    }
     const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
-    const stacks = Object.keys(cdkTree.tree.children);
+    const stacks = Object.keys(cdkTree.tree.children).filter(c => c !== "Tree");
     stacks.push("Enter manually"); 
     stack = await inputUtil.autocomplete("What's the name of the deployed stack?", stacks);
     if (stack === "Enter manually") {
