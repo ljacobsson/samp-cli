@@ -1,13 +1,21 @@
 const runner = require('./runner');
-const { exec } = require('child_process');
+const { exec, execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
+const { findConstructs } = require('./cdk-construct-finder');
+
+function setEnvVars(cmd) {
+  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
+  process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
+  process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || process.env.stackName;
+  process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH;
+}
 
 async function run(cmd) {
-
+  setEnvVars(cmd);
   if (cmd.mergePackageJsons) {
     await mergePackageJsons();
   }
@@ -24,7 +32,7 @@ async function run(cmd) {
   }
 
   if (cmd.debug) {
-    setupDebug();
+    await setupDebug();
     console.log("Debug setup complete. You can now hit F5 to start debugging");
     return;
   }
@@ -35,7 +43,37 @@ async function run(cmd) {
   }
 
   let initialised = false;
-  if (fs.existsSync("tsconfig.json")) {
+  if (fs.existsSync("cdk.json")) {
+    process.env.outDir = ".samp-out";
+    process.env.SAMP_TEMPLATE_PATH = ".samp-out/mock-template.yaml";
+
+    // build to get the stack construct as js    
+    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --outDir ${process.env.outDir} --noEmit false`, {});
+    tscProcess.stdout.on('data', (data) => {
+      print(data);
+      if (data.toString().includes("Watching for file changes") && !initialised) {
+
+        const cdkWrapper = exec(`node ${__dirname}/cdk-wrapper.js .samp-out/${cmd.construct.replace(".ts", "")}.js`, {});
+        cdkWrapper.stdout.on('data', (data) => {
+          print(data);
+        });
+        cdkWrapper.stderr.on('data', (data) => {
+          print(data);
+        });
+        cdkWrapper.on('exit', (code) => {
+          initialised = true;
+          const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
+          childProcess.stdout.on('data', (data) => print(data));
+          childProcess.stderr.on('data', (data) => print(data));
+        });
+      }
+    });
+    tscProcess.stderr.on('data', (data) => {
+      print(data);
+    });
+
+  }
+  else if (fs.existsSync("tsconfig.json")) {
     process.env.outDir = ".samp-out";
     let fileContent = fs.readFileSync("tsconfig.json", "utf8");
     // remove // comments
@@ -45,7 +83,7 @@ async function run(cmd) {
       console.log("tsc: ", data.toString().replace(/\n$/, ''));
       if (data.toString().includes("Watching for file changes") && !initialised) {
         initialised = true;
-        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
+        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
         childProcess.stdout.on('data', (data) => print(data));
         childProcess.stderr.on('data', (data) => print(data));
       }
@@ -81,7 +119,24 @@ function print(data) {
   }
 }
 
-function setupDebug() {
+async function setupDebug() {
+  let args = ["local"];
+  let stack  = null;
+  if (fs.existsSync(`cdk.json`)) {
+    const constructs = findConstructs();
+    const construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
+    const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
+    const stacks = Object.keys(cdkTree.tree.children);
+    stacks.push("Enter manually"); 
+    stack = await inputUtil.autocomplete("What's the name of the deployed stack?", stacks);
+    if (stack === "Enter manually") {
+      stack = await inputUtil.autocomplete("What's the name of the deployed stack?");
+    }
+    const region = await inputUtil.text("What's the region of the deployed stack?", process.env.AWS_REGION || process.env.DEFAULT_AWS_REGION || "us-east-1");
+    const profile = await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
+    args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct);
+  }
+
   const pwd = process.cwd();
   let launchJson;
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
@@ -95,8 +150,8 @@ function setupDebug() {
       "configurations": []
     };
   }
-
-  const existingConfig = launchJson.configurations.find(c => c.name === "Debug Lambda Functions");
+  const suffix = stack ? `-${stack}` : "";
+  const existingConfig = launchJson.configurations.find(c => c.name === "Debug Lambda Functions" + suffix);
   if (existingConfig) {
     console.log("Debug config already exists");
   } else {
@@ -104,9 +159,9 @@ function setupDebug() {
     launchJson.configurations.push({
       type: "node",
       request: "launch",
-      name: "Debug Lambda Functions",
+      name: "Debug Lambda Functions" + suffix,
       runtimeExecutable: "samp",
-      args: ["local"],
+      args,
       env: {
         muteParentOutput: "true"
       },
@@ -153,8 +208,7 @@ async function warn() {
     console.log("Warning: This command will make changes to your deployed function configuration in AWS for the duration of your debugging session.\n\nPlease ONLY run this against a development environment.\n\nTo learn more about the changes made, please visit https://github.com/ljacobsson/samp-cli#how-does-it-work\n");
     const answer = await inputUtil.prompt("Warn again next time?");
     if (!answer) {
-      settings.sampLocalWarned = true;
-      console.log(settings);
+      settings.sampLocalWarned = true;      
       settingsUtil.saveConfigSource(settings)
     }
   }
@@ -174,8 +228,13 @@ function validate() {
     }
   }
 
-  if (!fs.existsSync("samconfig.toml")) {
+  if (!fs.existsSync("samconfig.toml") && !fs.existsSync("cdk.json")) {
     console.log("No samconfig.toml found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
+    return false;
+  }
+
+  if (fs.existsSync("cdk.json") && !fs.existsSync("cdk.out")) {
+    console.log("No cdk.out found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'cdk deploy'");
     return false;
   }
 
