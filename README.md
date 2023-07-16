@@ -6,7 +6,9 @@
 \λλλλλλ\   λλλλλλλ |λλ / λλ / λλ |\__λλ  __|
  \____λλ\ λλ  __λλ |λλ | λλ | λλ |   λλ |   
 λλλλλλλ  |\λλλλλλλ |λλ | λλ | λλ |   \__|   
-\_______/  \_______|\__| \__| \__|          
+\_______/  \_______|\__| \__| \__|
+
+serverless pattern generator | local debugging | iam policy builder | console navigation helper | and more
 ```
 _CLI tool that takes your AWS SAM development to the next level_
 
