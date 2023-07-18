@@ -255,7 +255,7 @@ client.on('connect', async function () {
 
 client.on('message', async function (topic, message) {
   const obj = JSON.parse(message.toString());
-  process.env = obj.envVars;
+  process.env = {...obj.envVars, LOCAL_DEBUG: true};
   const result = await routeEvent(obj.event, obj.context, stack, functionSources);
   client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, JSON.stringify(result || {}));
 });
@@ -304,7 +304,7 @@ async function updateFunctions(func, lambdaClient) {
 
       const updateFunctionConfigurationCommand = new UpdateFunctionConfigurationCommand({
         FunctionName: functionName,
-        Timeout: parseInt(process.env.timeout || 60),
+        Timeout: parseInt(process.env.SAMP_TIMEOUT || 60),
         MemorySize: 256,
         Handler: 'relay.handler',
       });

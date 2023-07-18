@@ -26,14 +26,14 @@ function findFilesWithExtension(rootDir, fileExtension) {
 function findConstructs() {
   const rootDir = '.';
   const fileExtension = '.ts';
-  const searchString = 'extends cdk.Stack';
+  const searchString = /extends.*Stack/g;
   const files = findFilesWithExtension(rootDir, fileExtension);
   const matchedFiles = [];
 
   files.forEach((file) => {
     const fileContent = fs.readFileSync(file, 'utf8');
 
-    if (fileContent.includes(searchString)) {
+    if (fileContent.match(searchString)) {
       matchedFiles.push(file);
     }
   });

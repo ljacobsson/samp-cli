@@ -48,7 +48,7 @@ async function run(cmd) {
     process.env.SAMP_TEMPLATE_PATH = ".samp-out/mock-template.yaml";
 
     // build to get the stack construct as js    
-    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --outDir ${process.env.outDir} --noEmit false`, {});
+    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --outDir ${process.env.outDir} --noEmit false --inlineSourceMap false --sourceMap true`, {});
     tscProcess.stdout.on('data', (data) => {
       print(data);
       if (data.toString().includes("Watching for file changes") && !initialised) {
@@ -64,7 +64,9 @@ async function run(cmd) {
           initialised = true;
           const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
           childProcess.stdout.on('data', (data) => print(data));
-          childProcess.stderr.on('data', (data) => print(data));
+          childProcess.stderr.on('data', (data) => {
+            print(data);
+          });
         });
       }
     });
@@ -78,7 +80,7 @@ async function run(cmd) {
     let fileContent = fs.readFileSync("tsconfig.json", "utf8");
     // remove // comments
     fileContent = fileContent.replace(/\/\/.*/g, '');
-    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
+    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
     tscProcess.stdout.on('data', (data) => {
       console.log("tsc: ", data.toString().replace(/\n$/, ''));
       if (data.toString().includes("Watching for file changes") && !initialised) {
@@ -125,9 +127,9 @@ async function setupDebug() {
   if (fs.existsSync(`cdk.json`)) {
     const constructs = findConstructs();
     constructs.push("Enter manually");
-    const construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
+    let construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
     if (construct === "Enter manually") {
-      construct = await inputUtil.autocomplete("Which stack construct do you want to debug?");
+      construct = await inputUtil.text("Enter which stack construct do you want to debug?");
     }
     const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
     const stacks = Object.keys(cdkTree.tree.children).filter(c => c !== "Tree");
