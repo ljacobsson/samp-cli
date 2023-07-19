@@ -23,7 +23,7 @@ if (fs.existsSync(process.cwd() + "/.samp-out")) {
   console.log("Removing .samp-out directory");
   fs.rmSync(process.cwd() + "/.samp-out", { recursive: true, force: true });
 }
-
+if (!conf.envConfig) process.exit(0);
 const stackName = conf.envConfig.stack_name;
 const region = conf.envConfig.region;
 const profile = conf.envConfig.profile;

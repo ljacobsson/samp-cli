@@ -6,7 +6,7 @@ const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
 const { findConstructs } = require('./cdk-construct-finder');
-
+const commentJson = require('comment-json')
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
@@ -123,7 +123,7 @@ function print(data) {
 
 async function setupDebug() {
   let args = ["local"];
-  let stack  = null;
+  let stack = null;
   if (fs.existsSync(`cdk.json`)) {
     const constructs = findConstructs();
     constructs.push("Enter manually");
@@ -133,7 +133,7 @@ async function setupDebug() {
     }
     const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
     const stacks = Object.keys(cdkTree.tree.children).filter(c => c !== "Tree");
-    stacks.push("Enter manually"); 
+    stacks.push("Enter manually");
     stack = await inputUtil.autocomplete("What's the name of the deployed stack?", stacks);
     if (stack === "Enter manually") {
       stack = await inputUtil.autocomplete("What's the name of the deployed stack?");
@@ -148,8 +148,7 @@ async function setupDebug() {
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
     console.log("launch.json already exists");
     let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
-    fileContent = fileContent.replace(/\/\/.*/g, '');
-    launchJson = JSON.parse(fileContent);
+    launchJson = commentJson.parse(fileContent);
   } else {
     launchJson = {
       "version": "0.2.0",
@@ -186,11 +185,10 @@ async function setupDebug() {
   let tasksJson;
   if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
     console.log("tasks.json already exists");
-    tasksJson = JSON.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
-    const existingTask = tasksJson.tasks.find(t => t.label === "lambda-local-cleanup");
+    tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
+    const existingTask = tasksJson.tasks.find(t => t.label === "samp-local-cleanup");
     if (existingTask) {
       console.log("Task already exists");
-      return;
     } else {
       tasksJson.tasks.push(task);
     }
@@ -203,9 +201,8 @@ async function setupDebug() {
   if (!fs.existsSync(`${pwd}/.vscode`)) {
     fs.mkdirSync(`${pwd}/.vscode`);
   }
-
-  fs.writeFileSync(`${pwd}/.vscode/launch.json`, JSON.stringify(launchJson, null, 2));
-  fs.writeFileSync(`${pwd}/.vscode/tasks.json`, JSON.stringify(tasksJson, null, 2));
+  fs.writeFileSync(`${pwd}/.vscode/launch.json`, commentJson.stringify(launchJson, null, 2));
+  fs.writeFileSync(`${pwd}/.vscode/tasks.json`, commentJson.stringify(tasksJson, null, 2));
 }
 
 async function warn() {
@@ -214,7 +211,7 @@ async function warn() {
     console.log("Warning: This command will make changes to your deployed function configuration in AWS for the duration of your debugging session.\n\nPlease ONLY run this against a development environment.\n\nTo learn more about the changes made, please visit https://github.com/ljacobsson/samp-cli#how-does-it-work\n");
     const answer = await inputUtil.prompt("Warn again next time?");
     if (!answer) {
-      settings.sampLocalWarned = true;      
+      settings.sampLocalWarned = true;
       settingsUtil.saveConfigSource(settings)
     }
   }

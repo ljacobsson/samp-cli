@@ -13,7 +13,7 @@ function findFilesWithExtension(rootDir, fileExtension) {
 
       if (itemStats.isDirectory()) {
         traverseDir(itemPath);
-      } else if (path.extname(itemPath) === fileExtension && !itemPath.includes('node_modules')) {
+      } else if (path.extname(itemPath) === fileExtension && !itemPath.includes('node_modules') && !itemPath.includes('.samp-out')) {
         files.push(itemPath);
       }
     });

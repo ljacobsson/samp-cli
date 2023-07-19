@@ -1,9 +1,21 @@
 const cdk = require('aws-cdk-lib');
 const fs = require('fs');
 const { yamlDump } = require('yaml-cfn');
-let stackFile = fs.readFileSync(`${process.cwd()}/${process.argv[2]}`, 'utf8');
-stackFile = stackFile.replace(/\.ts"/g, '.js"').replace(/\.ts'/g, ".js'").replace(/\.ts`/g, ".js`");
-fs.writeFileSync(`${process.cwd()}/${process.argv[2]}`, stackFile);
+const path = require('path');
+
+const baseDir = `${process.cwd()}/.samp-out`;
+
+for (const file of getAllJsFiles(baseDir)) {
+  if (file.endsWith('.js')) {
+    let fileContents = fs.readFileSync(file, 'utf8');
+    if (fileContents.includes('aws-cdk-lib')) {
+      fileContents = fileContents.replace(/\.ts"/g, '.js"').replace(/\.ts'/g, ".js'").replace(/\.ts`/g, ".js`");
+      fs.writeFileSync(file, fileContents);
+    }
+  }
+}
+
+
 const TargetStack = require(`${process.cwd()}/${process.argv[2]}`);
 const className = Object.keys(TargetStack)[0];
 
@@ -58,4 +70,25 @@ function getCircularReplacer() {
     }
     return value;
   };
+}
+
+function getAllJsFiles(directory) {
+  let fileArray = [];
+
+  const files = fs.readdirSync(directory);
+
+  for (const file of files) {
+    const filePath = path.join(directory, file);
+    const fileStats = fs.statSync(filePath);
+
+    if (fileStats.isDirectory()) {
+      const nestedFiles = getAllJsFiles(filePath); // Recursively get files in subdirectory
+      fileArray = fileArray.concat(nestedFiles);
+    } else {
+      if (filePath.endsWith('.js'))
+        fileArray.push(filePath);
+    }
+  }
+
+  return fileArray;
 }
