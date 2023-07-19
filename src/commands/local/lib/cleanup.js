@@ -27,9 +27,14 @@ if (!conf.envConfig) process.exit(0);
 const stackName = conf.envConfig.stack_name;
 const region = conf.envConfig.region;
 const profile = conf.envConfig.profile;
+let credentials;
+try {
+  credentials = await fromSSO({ profile, region })();
+} catch (e) {
+}
 
-const cfnClient = new CloudFormationClient({ region, credentials: fromSSO({ profile }) });
-const lambdaClient = new LambdaClient({ region, credentials: fromSSO({ profile }) });
+const cfnClient = new CloudFormationClient({ region, credentials });
+const lambdaClient = new LambdaClient({ region, credentials });
 const templateResponse = await cfnClient.send(new GetTemplateCommand({ StackName: stackName, TemplateStage: "Processed" }));
 const stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
 

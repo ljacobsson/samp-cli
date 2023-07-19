@@ -32,9 +32,16 @@ if (fs.existsSync(`samconfig.toml`)) {
   }
 }
 console.log(`Using profile: ${envConfig.profile || 'default'}`);
-const stsClient = new STSClient({ region: envConfig.region, credentials: fromSSO({ profile: envConfig.profile || 'default' }) });
+
+let credentials;
+try {
+  credentials = await fromSSO({ profile: envConfig.profile || 'default' })();
+} catch (e) {
+}
+
+const stsClient = new STSClient({ region: envConfig.region, credentials });
 const accountId = (await stsClient.send(new GetCallerIdentityCommand({}))).Account;
-const iotClient = new IoTClient({ region: envConfig.region, credentials: fromSSO({ profile: envConfig.profile || 'default' }) });
+const iotClient = new IoTClient({ region: envConfig.region, credentials });
 const timer = new Date().getTime();
 let certData, endpoint, stack, functions, template;
 const policyName = "lambda-debug-policy";
@@ -128,9 +135,7 @@ if (!fs.existsSync(".lambda-debug")) {
   certData.ca = fs.readFileSync(path.join(__dirname, 'AmazonRootCA1.pem')).toString(); // Download this from Amazon's website   
   const cfnClient = new CloudFormationClient({
     region: envConfig.region,
-    credentials: fromSSO({
-      profile: envConfig.profile || 'default'
-    })
+    credentials: credentials
   });
 
   console.log(`Loading necessary resources...`);
@@ -154,9 +159,7 @@ if (!fs.existsSync(".lambda-debug")) {
   // replace function code with stub-local.js
   const lambdaClient = new LambdaClient({
     region: envConfig.region,
-    credentials: fromSSO({
-      profile: envConfig.profile || 'default',
-    })
+    credentials
   });
   if (!fs.existsSync(zipFilePath)) {
     console.log(`Creating Lambda artifact zip`);
