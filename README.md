@@ -268,6 +268,19 @@ Options:
   -h, --help                 display help for command
 ```
 
+### samp convert-sam-config
+Converts samconfig.toml to yaml format
+
+```
+Usage: samp convert-samconfig|cs [options]
+
+Converts samconfig.toml to samconfig.yaml
+
+Options:
+  -h, --help  display help for command
+```
+
+
 ### samp share
 Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.
 
