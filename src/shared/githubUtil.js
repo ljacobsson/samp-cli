@@ -55,7 +55,7 @@ function sanitize(setting) {
   }
 }
 
-async function getPatterns(filter) {
+async function getPatterns(filter="") {
   const patternsList = [];
   let ownerName = "";
   for (const setting of settings.filter(p => (p.collectionName || p.owner + "/" + p.repo).toLowerCase().includes(filter.toLowerCase()))) {
