@@ -1,6 +1,6 @@
 {
   "name": "samp-cli",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "CLI tool for extended productivity with AWS Serverless Application Model (SAM)",
   "main": "index.js",
   "scripts": {
