@@ -222,13 +222,23 @@ const functionSources = functions.map(key => { return { uri: template.Resources[
       break;
     }
   }
+  const module = `file://${`${process.cwd()}/${baseDir}${handler}${jsExt}`.replace(/\/\//g, '/')}`;
   map[obj.name] = {
-    module: `file://${`${process.cwd()}/${baseDir}${handler}${jsExt}`.replace(/\/\//g, '/')}`,
+    module,
     handler: handlerMethod
   };
 
   return map;
 }, {});
+
+for (const source of Object.values(functionSources)) {
+  if (!fs.existsSync(fileURLToPath(source.module))) {
+    console.log(`Function source ${source.module} does not exist. Have you compiled?`);
+    process.exit(1);
+  }
+  // preload modules
+  await import(source.module);
+}
 
 const connectOptions = {
   connectTimeout: 4000,
