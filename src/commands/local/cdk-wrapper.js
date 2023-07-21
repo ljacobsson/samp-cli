@@ -2,7 +2,7 @@ const cdk = require('aws-cdk-lib');
 const fs = require('fs');
 const { yamlDump } = require('yaml-cfn');
 const path = require('path');
-
+const jsonpath = require('jsonpath');
 const baseDir = `${process.cwd()}/.samp-out`;
 
 for (const file of getAllJsFiles(baseDir)) {
@@ -21,18 +21,20 @@ const className = Object.keys(TargetStack)[0];
 
 const templatePath = `${process.cwd()}/cdk.out/${process.env.SAMP_STACKNAME}.template.json`;
 const synthedTemplate = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
-const app = new cdk.App();
-const stack = new TargetStack[className](null, process.env.SAMP_STACKNAME, {});
 
+const stack = new TargetStack[className](null, process.env.SAMP_STACKNAME, {});
 const resources = stack.node._children;
 const mockTemplate = {
   AWSTemplateFormatVersion: "2010-09-09",
   Transform: ['AWS::Serverless-2016-10-31'], Resources: {}
 };
 for (const key of Object.keys(resources)) {
-  const resource = resources[key];
-  const fingerprintOptions = resource.node._children.Code?.node?._children?.Stage?.fingerprintOptions;
+  const resource = JSON.parse(JSON.stringify(resources[key], getCircularReplacer()));
+  delete resource.node?._children?._children?._children?.stack;
+  const fingerprintOptions = findShallowestOccurrence(resource, 'fingerprintOptions').occurrence;
+  
   const entry = fingerprintOptions?.bundling?.relativeEntryPath || (fingerprintOptions?.path ? `${fingerprintOptions?.path}/` : null);
+  
   let logicalId = null;
   let handler
   if (entry) {
@@ -40,7 +42,7 @@ for (const key of Object.keys(resources)) {
       const resource = synthedTemplate.Resources[fn];
       if (resource.Type === "AWS::Lambda::Function") {
         if (resource.Metadata?.["aws:asset:is-bundled"] === false) continue;
-        if (resource.Metadata?.['aws:cdk:path'].endsWith(`/${key}/Resource`)) {
+        if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {          
           logicalId = fn;
           handler = resource.Properties.Handler;
           break;
@@ -93,4 +95,29 @@ function getAllJsFiles(directory) {
   }
 
   return fileArray;
+}
+
+
+function findShallowestOccurrence(obj, key, depth = 0) {
+  let shallowestDepth = Infinity;
+  let shallowestOccurrence = null;
+
+  for (const prop in obj) {
+    if (obj.hasOwnProperty(prop)) {
+      if (prop === key) {
+        if (depth < shallowestDepth) {
+          shallowestDepth = depth;
+          shallowestOccurrence = obj[prop];
+        }
+      } else if (typeof obj[prop] === 'object') {
+        const occurrence = findShallowestOccurrence(obj[prop], key, depth + 1);
+        if (occurrence && occurrence.depth < shallowestDepth) {
+          shallowestDepth = occurrence.depth;
+          shallowestOccurrence = occurrence.occurrence;
+        }
+      }
+    }
+  }
+
+  return { occurrence: shallowestOccurrence, depth: shallowestDepth };
 }

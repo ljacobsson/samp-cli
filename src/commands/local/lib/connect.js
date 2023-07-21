@@ -340,6 +340,7 @@ async function updateFunctions(func, lambdaClient) {
       } else if (error.name === "ResourceConflictException") {
         console.log("Lambda is currently updating, sleeping for 1 second...");
       } else {
+        console.log("Error updating function. Please make sure that your have deployed your stack and that your function exists in AWS");
         throw error;
       }
       await new Promise(resolve => setTimeout(resolve, 1000));
