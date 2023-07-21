@@ -39,6 +39,7 @@ for (const key of Object.keys(resources)) {
     for (const fn of Object.keys(synthedTemplate.Resources)) {
       const resource = synthedTemplate.Resources[fn];
       if (resource.Type === "AWS::Lambda::Function") {
+        if (resource.Metadata?.["aws:asset:is-bundled"] === false) continue;
         if (resource.Metadata?.['aws:cdk:path'].endsWith(`/${key}/Resource`)) {
           logicalId = fn;
           handler = resource.Properties.Handler;
@@ -46,6 +47,7 @@ for (const key of Object.keys(resources)) {
         }
       }
     }
+    if (logicalId === null) continue;
 
     mockTemplate.Resources[logicalId] = {
       Type: "AWS::Serverless::Function",
