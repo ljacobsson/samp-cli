@@ -246,8 +246,6 @@ for (const source of Object.values(functionSources)) {
     console.log(`Function source ${source.module} does not exist. Have you compiled?`);
     process.exit(1);
   }
-  // preload modules
-  await import(source.module);
 }
 
 const connectOptions = {
