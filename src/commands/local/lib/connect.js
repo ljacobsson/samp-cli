@@ -47,7 +47,7 @@ const timer = new Date().getTime();
 let certData, endpoint, stack, functions, template;
 const policyName = "lambda-debug-policy";
 
-const packageVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..','..', 'package.json'))).version;
+const packageVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..', '..', 'package.json'))).version;
 
 const zipFilePath = path.join(os.homedir(), '.lambda-debug', `relay-${accountId}-${packageVersion}.zip`);
 
@@ -144,8 +144,15 @@ if (!fs.existsSync(".lambda-debug")) {
   const stackName = envConfig.stack_name;
 
   template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
-
   stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
+  let token = stack.NextToken;
+  if (token) {
+    do {
+      const page = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName, NextToken: token }));
+      stack.StackResourceSummaries = stack.StackResourceSummaries.concat(page.StackResourceSummaries);
+      token = page.NextToken;
+    } while (token);
+  }
 
   functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === 'AWS::Serverless::Function');
   if (process.env.includeFunctions) {
@@ -173,7 +180,7 @@ if (!fs.existsSync(".lambda-debug")) {
       console.log(`Error installing npm packages in relay folder: ${npmInstall.error}`);
       process.exit(1);
     }
-    
+
     //create zip file of relay folder
     const output = fs.createWriteStream(zipFilePath);
     const archive = archiver('zip', {
@@ -276,7 +283,7 @@ client.on('connect', async function () {
 
 client.on('message', async function (topic, message) {
   const obj = JSON.parse(message.toString());
-  process.env = {...obj.envVars, LOCAL_DEBUG: true};
+  process.env = { ...obj.envVars, LOCAL_DEBUG: true };
   const result = await routeEvent(obj.event, obj.context, stack, functionSources);
   client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, JSON.stringify(result || {}));
 });
