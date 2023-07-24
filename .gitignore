@@ -116,6 +116,6 @@ dist
 .pnp.*
 
 # all .key and all .pem files
-*/relay/cert.pem
-*/relay/key.pem
-*/relay/config.json
+*/**/relay/cert.pem
+*/**/relay/key.pem
+*/**/relay/config.json
