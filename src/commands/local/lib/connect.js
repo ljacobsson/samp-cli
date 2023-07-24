@@ -13,6 +13,7 @@ import ini from 'ini';
 import getMac from 'getmac';
 import archiver from 'archiver';
 import { fileURLToPath } from 'url';
+import { spawnSync } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const mac = getMac();
@@ -46,7 +47,7 @@ const timer = new Date().getTime();
 let certData, endpoint, stack, functions, template;
 const policyName = "lambda-debug-policy";
 
-const packageVersion = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'))).version;
+const packageVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', '..','..', 'package.json'))).version;
 
 const zipFilePath = path.join(os.homedir(), '.lambda-debug', `relay-${accountId}-${packageVersion}.zip`);
 
@@ -164,6 +165,15 @@ if (!fs.existsSync(".lambda-debug")) {
   if (!fs.existsSync(zipFilePath)) {
     console.log(`Creating Lambda artifact zip`);
     fs.writeFileSync(path.join(__dirname, 'relay', 'config.json'), JSON.stringify({ mac: mac, endpoint: endpoint }));
+    // install npm package sin relay folder
+    const npm = os.platform() === 'win32' ? 'npm.cmd' : 'npm';
+    console.log(`Installing npm packages in relay lambda function folder`);
+    const npmInstall = spawnSync(npm, ['install'], { cwd: path.join(__dirname, 'relay') });
+    if (npmInstall.error) {
+      console.log(`Error installing npm packages in relay folder: ${npmInstall.error}`);
+      process.exit(1);
+    }
+    
     //create zip file of relay folder
     const output = fs.createWriteStream(zipFilePath);
     const archive = archiver('zip', {

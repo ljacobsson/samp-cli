@@ -42,9 +42,12 @@ for (const key of Object.keys(resources)) {
       const resource = synthedTemplate.Resources[fn];
       if (resource.Type === "AWS::Lambda::Function") {
         if (resource.Metadata?.["aws:asset:is-bundled"] === false) continue;
-        if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {          
+        if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {    
+          //get filename from entry
+          
+          const entryFile = entry.substring(entry.lastIndexOf("/") + 1).split(".")[0];
           logicalId = fn;
-          handler = resource.Properties.Handler;
+          handler = `${entryFile}.${resource.Properties.Handler.split(".")[1]}`;
           break;
         }
       }
