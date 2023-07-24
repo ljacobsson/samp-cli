@@ -55,7 +55,7 @@ if (!fs.existsSync(".lambda-debug")) {
   const createKeysAndCertificate = async () => {
 
     const homeDir = os.homedir();
-    const certPath = path.join(homeDir, '.lambda-debug', `cert-${accountId}.json`);
+    const certPath = path.join(homeDir, '.lambda-debug', `certificate-${accountId}.json`);
     let response;
     if (fs.existsSync(certPath)) {
       response = JSON.parse(fs.readFileSync(certPath));
