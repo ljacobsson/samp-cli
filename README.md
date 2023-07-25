@@ -99,7 +99,9 @@ Options:
   ```
 
 ### samp local
-This lets you test your Lambda functions locally with real events from your AWS account. You can step through your code using breakpoints and enjoy sub-second code reloads on changes. If a `samconfig.toml` file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
+This feature is inspired by and works similarly to [SST](https://twitter.com/SST_dev)'s [Live Lambda Development](https://docs.sst.dev/live-lambda-development). 
+
+It lets you test your Lambda functions locally with real events from your AWS account. You can step through your code using breakpoints and get sub-second code reloads on changes. If a `samconfig.toml` file is present, it will use the stack name and region from that file. Otherwise you will have to specify them using the `--stack-name` and `--region` flags.
 
 * NOTE #1: this command temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). Please only use on development stacks. Never use on production functions! *
 * NOTE #2: this command does not fully support Lambda layers. If you use layers to bundle your dependencies, you will have to manually install them locally as well. If you use layers to share custom code between functions, create a symlink from `/opt/nodejs` to the layer folder in your function folder.
@@ -123,6 +125,8 @@ Options:
 The `--force-restore` flag is useful if you want to restore the original Lambda code in the cloud after you've finished debugging. This is normally done automatically when you finish your session (CTRL+C), but in the case of a crash or unexpected exit, you can use this flag to restore the original code.
 
 ![Demo](images/demo-local.gif)
+
+*Big thanks to [Jason Wadsworth](https://twitter.com/quizout) for all the early feedback on this feature <3*
 
 #### Debugging with VS Code
 In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
