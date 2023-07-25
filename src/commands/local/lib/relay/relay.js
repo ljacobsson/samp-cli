@@ -79,10 +79,10 @@ export const handler = async (event, context) => {
 function publishEvent(event, context) {
   const sessionId = new Date().getTime() + '-' + Math.floor((Math.random() * 1000000) + 1); // Unique ID for this rounndtrip
   const totalPayload = JSON.stringify({ event, context, envVars: process.env, sessionId });
-  if (totalPayload.length > 64) {
-    const chunks = totalPayload.match(/.{1,64}/g);
+  if (totalPayload.length > 64000) {
+    const chunks = totalPayload.match(/.{1,100000}/g);
     chunks.forEach((chunk, index) => {
-      const payload = JSON.stringify({ event: 'chunk', chunk, index, totalChunks: chunks.length });
+      const payload = JSON.stringify({ event: 'chunk', chunk, index, totalChunks: chunks.length, sessionId });
       publish(payload, sessionId);
     });
   } else {

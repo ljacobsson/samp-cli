@@ -281,16 +281,31 @@ client.on('connect', async function () {
   client.subscribe('lambda-debug/event/' + mac);
 });
 
+const eventQueue = {};
+
 client.on('message', async function (topic, message) {
-  const obj = JSON.parse(message.toString());
-  const frk = fork(path.join(__dirname, 'event-router.js'), [ JSON.stringify(obj), JSON.stringify(stack), JSON.stringify(functionSources)]);
+  let obj = JSON.parse(message.toString());
+  if (obj.event === 'chunk') {
+    eventQueue[obj.sessionId] = eventQueue[obj.sessionId] || [];
+    eventQueue[obj.sessionId][obj.index] = obj.chunk;
+   
+    if (Object.keys(eventQueue[obj.sessionId]).length === obj.totalChunks) {
+      const merge = Object.keys(eventQueue[obj.sessionId]).map(p => eventQueue[obj.sessionId][p]).join('');
+      delete eventQueue[obj.sessionId];
+      obj = JSON.parse(merge);
+    } else {
+      return;
+    }
+  }
+
+  const frk = fork(path.join(__dirname, 'event-router.js'), [JSON.stringify(obj), JSON.stringify(stack), JSON.stringify(functionSources)]);
 
   frk.on('message', (result) => {
     console.log(`Result: ${result}`);
     client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, result);
   });
-    
-//  
+
+  //  
 });
 
 client.on('close', function () {
