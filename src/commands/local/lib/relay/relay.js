@@ -77,8 +77,21 @@ export const handler = async (event, context) => {
 };
 
 function publishEvent(event, context) {
-  const sessionId = new Date().getTime() + '-' + Math.floor((Math.random() * 1000000) + 1); // Unique ID for this debug session
+  const sessionId = new Date().getTime() + '-' + Math.floor((Math.random() * 1000000) + 1); // Unique ID for this rounndtrip
+  const totalPayload = JSON.stringify({ event, context, envVars: process.env, sessionId });
+  if (totalPayload.length > 64) {
+    const chunks = totalPayload.match(/.{1,64}/g);
+    chunks.forEach((chunk, index) => {
+      const payload = JSON.stringify({ event: 'chunk', chunk, index, totalChunks: chunks.length });
+      publish(payload, sessionId);
+    });
+  } else {
+    publish(totalPayload, sessionId);
+  }
+}
+
+function publish(payload, sessionId) {
   client.subscribe(`lambda-debug/callback/${config.mac}/${sessionId}`);
-  client.publish('lambda-debug/event/' + config.mac, JSON.stringify({ event, context, envVars: process.env, sessionId }));
+  client.publish('lambda-debug/event/' + config.mac, payload);
 }
 

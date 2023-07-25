@@ -338,7 +338,7 @@ async function updateFunctions(func, lambdaClient) {
       const updateFunctionConfigurationCommand = new UpdateFunctionConfigurationCommand({
         FunctionName: functionName,
         Timeout: parseInt(process.env.SAMP_TIMEOUT || 60),
-        MemorySize: 256,
+        MemorySize: 128,
         Handler: 'relay.handler',
       });
       await lambdaClient.send(updateFunctionConfigurationCommand);
