@@ -41,6 +41,8 @@ for (const key of Object.keys(resources)) {
     for (const fn of Object.keys(synthedTemplate.Resources)) {
       const resource = synthedTemplate.Resources[fn];
       if (resource.Type === "AWS::Lambda::Function") {
+        if (!resource.Properties?.Code?.S3Bucket) continue; 
+        if (!resource.Properties?.Runtime.startsWith("node")) continue;
         if (resource.Metadata?.["aws:asset:is-bundled"] === false) continue;
         if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {    
           //get filename from entry
