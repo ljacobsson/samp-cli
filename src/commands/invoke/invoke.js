@@ -10,9 +10,35 @@ const link2aws = require('link2aws');
 const open = import('open');
 let region;
 async function run(cmd) {
-  if (fs.existsSync("samconfig.toml")) {
+  if (fs.existsSync(".lambda-debug")) {
+    const envConfig = JSON.parse(fs.readFileSync(".lambda-debug", "utf8")).envConfig;
+    cmd.stackName = envConfig.stack_name;
+    cmd.profile = envConfig.profile;
+    cmd.region = envConfig.region;
+  } else if (fs.existsSync("cdk.out/manifest.json")) {
+    const manifest = JSON.parse(fs.readFileSync("cdk.out/manifest.json", "utf8"));
+    const stacks = Object.keys(manifest.artifacts).filter(key => manifest.artifacts[key].type === "aws:cloudformation:stack");
+    let stack = stacks[0];
+    if (stacks.length > 1) {
+      stack = await inputUtil.autocomplete("Select a stack", stacks);
+    }
+    const stackInfo = manifest.artifacts[stack];
+    cmd.stackName = stack;
+    const region = stackInfo.environment.split("/")[3];
+    if (!cmd.region && region === "unknown-region") {
+      console.log("Unable to determine region from manifest.json. Please specify using --region");
+      process.exit(1);
+    }
+    if (!cmd.region) {
+      cmd.region = region;
+    }
+    if (!cmd.profile) {
+      console.log("Using default profile. Override by setting --profile <your profile>");
+    }
+  }
+  else if (fs.existsSync("samconfig.toml")) {
     const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
-    const params = { ...config?.default?.deploy?.parameters, ...(config?.default?.global?.parameters || {})};
+    const params = { ...config?.default?.deploy?.parameters, ...(config?.default?.global?.parameters || {}) };
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);
       cmd.stackName = params.stack_name;

@@ -36,7 +36,14 @@ try {
 const cfnClient = new CloudFormationClient({ region, credentials });
 const lambdaClient = new LambdaClient({ region, credentials });
 const templateResponse = await cfnClient.send(new GetTemplateCommand({ StackName: stackName, TemplateStage: "Processed" }));
-const stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
+
+const stackResources = [];
+let token;
+do {
+  const response = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName, NextToken: token }));
+  stackResources.push(...response.StackResourceSummaries);
+  token = response.NextToken;
+} while (token);
 
 const template = JSON.parse(templateResponse.TemplateBody);
 
@@ -47,7 +54,7 @@ const updatePromises = functions.map(async functionName => {
   do {
     try {
       const func = template.Resources[functionName];
-      const physicalId = stack.StackResourceSummaries.find(resource => resource.LogicalResourceId === functionName).PhysicalResourceId;
+      const physicalId = stackResources.find(resource => resource.LogicalResourceId === functionName).PhysicalResourceId;
       console.log(`Restoring function: ${functionName}`);
 
       await lambdaClient.send(new UpdateFunctionConfigurationCommand({

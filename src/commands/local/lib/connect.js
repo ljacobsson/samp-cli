@@ -13,7 +13,7 @@ import ini from 'ini';
 import getMac from 'getmac';
 import archiver from 'archiver';
 import { fileURLToPath } from 'url';
-import { spawnSync } from 'child_process';
+import { fork, spawnSync } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const mac = getMac();
@@ -283,9 +283,14 @@ client.on('connect', async function () {
 
 client.on('message', async function (topic, message) {
   const obj = JSON.parse(message.toString());
-  process.env = { ...obj.envVars, LOCAL_DEBUG: true };
-  const result = await routeEvent(obj.event, obj.context, stack, functionSources);
-  client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, JSON.stringify(result || {}));
+  const frk = fork(path.join(__dirname, 'event-router.js'), [ JSON.stringify(obj), JSON.stringify(stack), JSON.stringify(functionSources)]);
+
+  frk.on('message', (result) => {
+    console.log(`Result: ${result}`);
+    client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, result);
+  });
+    
+//  
 });
 
 client.on('close', function () {

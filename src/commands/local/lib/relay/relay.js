@@ -48,22 +48,32 @@ export const handler = async (event, context) => {
     });
 
     client.on('message', function (topic, message) {
-      const payload = JSON.parse(message.toString());
-      if (payload.error) {
-        console.log('Error: ', payload.error);
-        reject(payload.error);
+      let payload;
+      try {
+        payload = JSON.parse(message.toString());
+        if (payload.error) {
+          console.log('Error: ', payload.error);
+          reject(payload.error);
+        }
+        if (payload.event === 'exit') {
+          console.log('Debug session ended');
+          client.end();
+          resolve('exit');
+        }
+      } catch (e) {
+        // non-json payload
       }
-      if (payload.event === 'exit') {
-        console.log('Debug session ended');
-        client.end();
-        resolve('exit');
-      }
+
       resolve(message.toString());
     });
   });
 
   const message = await promise;
-  return JSON.parse(message);
+  try {
+    return JSON.parse(message);
+  } catch (e) {
+    return message;
+  }
 };
 
 function publishEvent(event, context) {
