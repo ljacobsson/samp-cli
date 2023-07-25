@@ -126,6 +126,8 @@ The `--force-restore` flag is useful if you want to restore the original Lambda 
 
 ![Demo](images/demo-local.gif)
 
+* Big thanks to [Jason Wadsworth](https://twitter.com/quizout) for all the early feedback on this feature <3 *
+
 #### Debugging with VS Code
 In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
 
