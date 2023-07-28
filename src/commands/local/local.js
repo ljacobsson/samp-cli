@@ -7,6 +7,10 @@ const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
 const { findConstructs } = require('./cdk-construct-finder');
 const commentJson = require('comment-json')
+const { fromSSO } = require('@aws-sdk/credential-provider-sso');
+const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
+const samConfigParser = require('../../shared/samConfigParser');
+
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
@@ -32,8 +36,7 @@ async function run(cmd) {
   }
 
   if (cmd.debug) {
-    await setupDebug();
-    console.log("Debug setup complete. You can now hit F5 to start debugging");
+    await setupDebug(cmd);
     return;
   }
 
@@ -121,9 +124,14 @@ function print(data) {
   }
 }
 
-async function setupDebug() {
+async function setupDebug(cmd) {
+  let credentials;
+  let targetConfig = samConfigParser.parse();
   let args = ["local"];
-  let stack = null;
+  let stack = cmd.stackName || targetConfig.stack_name;
+  let region = cmd.region || targetConfig.region;
+  let profile = cmd.profile || targetConfig.profile;
+  const pwd = process.cwd();
   if (fs.existsSync(`cdk.json`)) {
     const constructs = findConstructs();
     constructs.push("Enter manually");
@@ -136,17 +144,60 @@ async function setupDebug() {
     stacks.push("Enter manually");
     stack = await inputUtil.autocomplete("What's the name of the deployed stack?", stacks);
     if (stack === "Enter manually") {
-      stack = await inputUtil.autocomplete("What's the name of the deployed stack?");
+      stack = await inputUtil.text("What's the name of the deployed stack?");
     }
-    const region = await inputUtil.text("What's the region of the deployed stack?", process.env.AWS_REGION || process.env.DEFAULT_AWS_REGION || "us-east-1");
-    const profile = await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
+    const regions = [
+      "ap-south-1",
+      "eu-north-1",
+      "eu-west-3",
+      "eu-west-2",
+      "eu-west-1",
+      "ap-northeast-3",
+      "ap-northeast-2",
+      "ap-northeast-1",
+      "ca-central-1",
+      "sa-east-1",
+      "ap-southeast-1",
+      "ap-southeast-2",
+      "eu-central-1",
+      "us-east-1",
+      "us-east-2",
+      "us-west-1",
+      "us-west-2"
+    ];
+    region = region || await inputUtil.autocomplete("What's the region of the deployed stack?", regions);
+    profile = profile || await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
     args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct);
   }
 
-  const pwd = process.cwd();
+  try {
+    credentials = await fromSSO({ profile: profile || 'default' })();
+  } catch (e) {
+  }
+
+  const cloudFormation = new CloudFormationClient({ credentials, region });
+
+  const functions = [];
+  let token;
+  do {
+    try {
+      const response = await cloudFormation.send(new ListStackResourcesCommand({ StackName: stack, NextToken: token }));
+      functions.push(...response.StackResourceSummaries.filter(r => r.ResourceType === "AWS::Lambda::Function"));
+      token = response.NextToken;
+    } catch (e) {
+      console.log(`Failed to list stack resources for stack '${stack}' in '${region}' using profile '${profile}'.`, e.message);
+      process.exit(1);
+    }
+  } while (token);
+
+  const functionNames = functions.map(f => f.LogicalResourceId);
+  const selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
+  const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
+  const name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
+  args.push("--functions", selectedFunctions.join(","));
+
   let launchJson;
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
-    console.log("launch.json already exists");
     let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
     launchJson = commentJson.parse(fileContent);
   } else {
@@ -155,8 +206,7 @@ async function setupDebug() {
       "configurations": []
     };
   }
-  const suffix = stack ? `-${stack}` : "";
-  const existingConfig = launchJson.configurations.find(c => c.name === "Debug Lambda Functions" + suffix);
+  const existingConfig = launchJson.configurations.find(c => c.name === name);
   if (existingConfig) {
     console.log("Debug config already exists");
   } else {
@@ -164,7 +214,7 @@ async function setupDebug() {
     launchJson.configurations.push({
       type: "node",
       request: "launch",
-      name: "Debug Lambda Functions" + suffix,
+      name,
       runtimeExecutable: "samp",
       args,
       env: {
@@ -184,12 +234,9 @@ async function setupDebug() {
   }
   let tasksJson;
   if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
-    console.log("tasks.json already exists");
     tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
     const existingTask = tasksJson.tasks.find(t => t.label === "samp-local-cleanup");
-    if (existingTask) {
-      console.log("Task already exists");
-    } else {
+    if (!existingTask) {
       tasksJson.tasks.push(task);
     }
   } else {
@@ -203,6 +250,13 @@ async function setupDebug() {
   }
   fs.writeFileSync(`${pwd}/.vscode/launch.json`, commentJson.stringify(launchJson, null, 2));
   fs.writeFileSync(`${pwd}/.vscode/tasks.json`, commentJson.stringify(tasksJson, null, 2));
+
+  if (launchJson.configurations.length === 1) {
+    console.log("Debug setup complete. You can now hit F5 to start debugging");
+  } else {
+    console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
+  }
+
 }
 
 async function warn() {

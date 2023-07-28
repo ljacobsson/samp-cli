@@ -14,35 +14,32 @@ import getMac from 'getmac';
 import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import { fork, spawnSync } from 'child_process';
+import samConfigParser from '../../../shared/samConfigParser.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const mac = getMac();
-let envConfig = {};
-let config = {};
-let configEnv = 'default';
+let targetConfig = {};
 if (fs.existsSync(`samconfig.toml`)) {
-  config = ini.parse(fs.readFileSync(`samconfig.toml`, 'utf-8'));
-  configEnv = process.env.configEnv || 'default';
-  envConfig = config[configEnv].deploy.parameters;
-  envConfig.stack_name = envConfig.stack_name || config[configEnv].global.parameters.stack_name
+  targetConfig = samConfigParser.parse();
+  console.log(targetConfig);
 } else {
-  envConfig = {
+  targetConfig = {
     stack_name: process.env.SAMP_STACKNAME,
     region: process.env.SAMP_REGION,
     profile: process.env.SAMP_PROFILE
   }
 }
-console.log(`Using profile: ${envConfig.profile || 'default'}`);
+console.log(`Using profile: ${targetConfig.profile || 'default'}`);
 
 let credentials;
 try {
-  credentials = await fromSSO({ profile: envConfig.profile || 'default' })();
+  credentials = await fromSSO({ profile: targetConfig.profile || 'default' })();
 } catch (e) {
 }
 
-const stsClient = new STSClient({ region: envConfig.region, credentials });
+const stsClient = new STSClient({ region: targetConfig.region, credentials });
 const accountId = (await stsClient.send(new GetCallerIdentityCommand({}))).Account;
-const iotClient = new IoTClient({ region: envConfig.region, credentials });
+const iotClient = new IoTClient({ region: targetConfig.region, credentials });
 const timer = new Date().getTime();
 let certData, endpoint, stack, functions, template;
 const policyName = "lambda-debug-policy";
@@ -135,13 +132,13 @@ if (!fs.existsSync(".lambda-debug")) {
   // Load your AWS IoT certificates
   certData.ca = fs.readFileSync(path.join(__dirname, 'AmazonRootCA1.pem')).toString(); // Download this from Amazon's website   
   const cfnClient = new CloudFormationClient({
-    region: envConfig.region,
+    region: targetConfig.region,
     credentials: credentials
   });
 
   console.log(`Loading necessary resources...`);
 
-  const stackName = envConfig.stack_name;
+  const stackName = targetConfig.stack_name;
 
   template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
   stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
@@ -162,11 +159,11 @@ if (!fs.existsSync(".lambda-debug")) {
     const excludeFunctions = process.env.excludeFunctions.split(',').map(f => f.trim());
     functions = functions.filter(f => !excludeFunctions.includes(f));
   }
-  fs.writeFileSync(".lambda-debug", JSON.stringify({ functions, template, configEnv, envConfig, accountId }));
+  fs.writeFileSync(".lambda-debug", JSON.stringify({ functions, template, envConfig: targetConfig, accountId }));
 
   // replace function code with stub-local.js
   const lambdaClient = new LambdaClient({
-    region: envConfig.region,
+    region: targetConfig.region,
     credentials
   });
   if (!fs.existsSync(zipFilePath)) {
@@ -263,7 +260,6 @@ const connectOptions = {
   keepalive: 60,
   client_id: 'mqtt-client-' + Math.floor((Math.random() * 1000000) + 1),
   protocol: 'mqtt',
-  reconnectPeriod: 1000,
   clean: true,
   host: endpoint,
   debug: true,
@@ -277,7 +273,7 @@ client.on('error', function (err) {
 
 client.on('connect', async function () {
   console.log('Ready for requests...')
-  fs.writeFileSync(".lambda-debug", JSON.stringify({ stack, endpoint, certData, functions, template, configEnv, envConfig, accountId }));
+  fs.writeFileSync(".lambda-debug", JSON.stringify({ stack, endpoint, certData, functions, template, envConfig: targetConfig, accountId }));
   client.subscribe('lambda-debug/event/' + mac);
 });
 
@@ -313,7 +309,7 @@ client.on('close', function () {
   console.log('Disconnected from live debug session');
 });
 
-if (!envConfig.childProcess) {
+if (!targetConfig.childProcess) {
   process.on('SIGINT', async function () {
     console.log("Caught interrupt signal");
     process.exit();
