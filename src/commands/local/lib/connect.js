@@ -21,7 +21,6 @@ const mac = getMac();
 let targetConfig = {};
 if (fs.existsSync(`samconfig.toml`)) {
   targetConfig = samConfigParser.parse();
-  console.log(targetConfig);
 } else {
   targetConfig = {
     stack_name: process.env.SAMP_STACKNAME,
