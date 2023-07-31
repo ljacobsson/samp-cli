@@ -107,7 +107,7 @@ static void ThreadStart(object data)
       }
       else
       {
-        File.WriteAllText(responsesDir, JsonConvert.SerializeObject(result.ToString()));
+        File.WriteAllText(responsesDir, JsonConvert.SerializeObject(result));
       }
 
     }
