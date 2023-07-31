@@ -10,7 +10,7 @@ function parse() {
   envConfig.configEnv = process.env.configEnv || 'default';
   envConfig.stack_name = envConfig.stack_name || config[configEnv].global.parameters.stack_name
   envConfig.region = envConfig.region || config[configEnv].global.parameters.region || process.env.AWS_REGION;
-  envConfig.profile = envConfig.profile || config[configEnv].global.parameters.profile || process.env.AWS_PROFILE;
+  envConfig.profile = envConfig.profile || config[configEnv].global?.parameters.profile || process.env.AWS_PROFILE || 'default';
   return envConfig;
 }
 

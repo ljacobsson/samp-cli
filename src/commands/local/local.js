@@ -10,7 +10,10 @@ const commentJson = require('comment-json')
 const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
-
+const runtimeEnvFinder = require('./runtime-env-finder');
+const { findSAMTemplateFile } = require('../../shared/parser');
+const { yamlParse } = require('yaml-cfn');
+let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
@@ -19,12 +22,13 @@ function setEnvVars(cmd) {
 }
 
 async function run(cmd) {
+  env = runtimeEnvFinder.determineRuntime();
   setEnvVars(cmd);
   if (cmd.mergePackageJsons) {
     await mergePackageJsons();
   }
 
-  if (!validate()) {
+  if (!validate(env)) {
     return;
   }
 
@@ -46,57 +50,15 @@ async function run(cmd) {
   }
 
   let initialised = false;
-  if (fs.existsSync("cdk.json")) {
-    process.env.outDir = ".samp-out";
-    process.env.SAMP_TEMPLATE_PATH = ".samp-out/mock-template.yaml";
-
-    // build to get the stack construct as js    
-    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --outDir ${process.env.outDir} --noEmit false --inlineSourceMap false --sourceMap true`, {});
-    tscProcess.stdout.on('data', (data) => {
-      print(data);
-      if (data.toString().includes("Watching for file changes") && !initialised) {
-
-        const cdkWrapper = exec(`node ${__dirname}/cdk-wrapper.js .samp-out/${cmd.construct.replace(".ts", "")}.js`, {});
-        cdkWrapper.stdout.on('data', (data) => {
-          print(data);
-        });
-        cdkWrapper.stderr.on('data', (data) => {
-          print(data);
-        });
-        cdkWrapper.on('exit', (code) => {
-          initialised = true;
-          const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
-          childProcess.stdout.on('data', (data) => print(data));
-          childProcess.stderr.on('data', (data) => {
-            print(data);
-          });
-        });
-      }
-    });
-    tscProcess.stderr.on('data', (data) => {
-      print(data);
-    });
-
+  if (env === "cdk-ts") {
+    initialised = setupCDK_TS(initialised, cmd);
   }
-  else if (fs.existsSync("tsconfig.json")) {
-    process.env.outDir = ".samp-out";
-    let fileContent = fs.readFileSync("tsconfig.json", "utf8");
-    // remove // comments
-    fileContent = fileContent.replace(/\/\/.*/g, '');
-    const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
-    tscProcess.stdout.on('data', (data) => {
-      console.log("tsc: ", data.toString().replace(/\n$/, ''));
-      if (data.toString().includes("Watching for file changes") && !initialised) {
-        initialised = true;
-        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
-        childProcess.stdout.on('data', (data) => print(data));
-        childProcess.stderr.on('data', (data) => print(data));
-      }
-    });
-  } else {
-    const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
-    childProcess.stdout.on('data', (data) => print(data));
-    childProcess.stderr.on('data', (data) => print(data));
+  else if (env === "sam-ts") {
+    initialised = setupSAM_TS(initialised);
+  } else if (env === "sam-js") {
+    setupSAM_JS();
+  } else if (env === "sam-dotnet") {
+    setupSAM_dotnet();
   }
 
   // catch ctrl+c event and exit normally
@@ -116,6 +78,90 @@ async function run(cmd) {
     console.log('exit...');
     await runner.stop();
   });
+}
+
+function setupSAM_dotnet() {
+  const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
+  template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
+
+  // fetch all functions
+  const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Serverless::Function");
+  const codeURIs = functions.map(f => {
+    const props = template.Resources[f].Properties
+    const codeUri = (props.CodeUri || template.Globals.Function.CodeUri + "/").replace(/\/\//g, "/");
+    const project = props.Handler.split("::")[0];
+    return `\\${codeUri}\\${project}`;
+  });
+
+  const uniqueCodeURIs = [...new Set(codeURIs)];
+  console.log('Copying dotnet project');
+  fs.cpSync(`${__dirname}/runtime-support/dotnet`, `.samp-out/`, { recursive: true });
+
+  let csproj = fs.readFileSync(`.samp-out/dotnet.csproj`, 'utf8');
+  
+  for (const codeUri of uniqueCodeURIs) {
+    csproj = csproj.replace("<!-- Projects -->", projectReferenceTemplate.replace("%code_uri%", codeUri) + "\n<!-- Projects -->");
+  }
+  csproj = csproj.replace("<!-- Projects -->", "");
+  fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
+
+  setupSAM_JS();
+}
+function setupSAM_JS() {
+  const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
+  childProcess.stdout.on('data', (data) => print(data));
+  childProcess.stderr.on('data', (data) => print(data));
+}
+
+function setupSAM_TS(initialised) {
+  process.env.outDir = ".samp-out";
+  let fileContent = fs.readFileSync("tsconfig.json", "utf8");
+  // remove // comments
+  fileContent = fileContent.replace(/\/\/.*/g, '');
+  const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
+  tscProcess.stdout.on('data', (data) => {
+    console.log("tsc: ", data.toString().replace(/\n$/, ''));
+    if (data.toString().includes("Watching for file changes") && !initialised) {
+      initialised = true;
+      const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
+      childProcess.stdout.on('data', (data) => print(data));
+      childProcess.stderr.on('data', (data) => print(data));
+    }
+  });
+  return initialised;
+}
+
+function setupCDK_TS(initialised, cmd) {
+  process.env.outDir = ".samp-out";
+  process.env.SAMP_TEMPLATE_PATH = ".samp-out/mock-template.yaml";
+
+  // build to get the stack construct as js    
+  const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --outDir ${process.env.outDir} --noEmit false --inlineSourceMap false --sourceMap true`, {});
+  tscProcess.stdout.on('data', (data) => {
+    print(data);
+    if (data.toString().includes("Watching for file changes") && !initialised) {
+
+      const cdkWrapper = exec(`node ${__dirname}/cdk-wrapper.js .samp-out/${cmd.construct.replace(".ts", "")}.js`, {});
+      cdkWrapper.stdout.on('data', (data) => {
+        print(data);
+      });
+      cdkWrapper.stderr.on('data', (data) => {
+        print(data);
+      });
+      cdkWrapper.on('exit', (code) => {
+        initialised = true;
+        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
+        childProcess.stdout.on('data', (data) => print(data));
+        childProcess.stderr.on('data', (data) => {
+          print(data);
+        });
+      });
+    }
+  });
+  tscProcess.stderr.on('data', (data) => {
+    print(data);
+  });
+  return initialised;
 }
 
 function print(data) {
@@ -271,17 +317,19 @@ async function warn() {
   }
 }
 
-function validate() {
-  if (!fs.existsSync("package.json")) {
-    console.log("Warning - no package.json found. This command expects a package.json file to exist in the project root directory. If you use one package.json per function sub-folder, please run 'samp local --merge-package-jsons' to create a package.json file in the project root directory followed by npm install");
-    return true;
-  }
+function validate(env) {
+  if (env.includes('dotnet')) {
+    if (!fs.existsSync("package.json")) {
+      console.log("Warning - no package.json found. This command expects a package.json file to exist in the project root directory. If you use one package.json per function sub-folder, please run 'samp local --merge-package-jsons' to create a package.json file in the project root directory followed by npm install");
+      return true;
+    }
 
-  const package = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  if (package.dependencies && Object.keys(package.dependencies).length) {
-    if (!fs.existsSync("node_modules")) {
-      console.log("No node_modules found. Please run 'npm install' before running this command");
-      return false;
+    const package = JSON.parse(fs.readFileSync("package.json", "utf8"));
+    if (package.dependencies && Object.keys(package.dependencies).length) {
+      if (!fs.existsSync("node_modules")) {
+        console.log("No node_modules found. Please run 'npm install' before running this command");
+        return false;
+      }
     }
   }
 

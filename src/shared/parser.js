@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const yamlCfn = require("yaml-cfn");
 let format = {
   yaml: "yaml",
@@ -19,8 +21,34 @@ function stringify(identifier, obj) {
     return yamlCfn.yamlDump(obj).replace(/!<(.+?)>/g, "$1");
 }
 
+function findSAMTemplateFile(directory) {
+  if (fs.existsSync("./cdk.json")) {
+    return ".samp-out/mock-template.yaml";
+  }
+  const files = fs.readdirSync(directory);
+
+  for (const file of files) {
+    const filePath = path.join(directory, file);
+
+    // Check if the file extension is .json, .yml, or .yaml
+    if (file.match(/\.(json|ya?ml)$/i)) {
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      // Check if the content of the file contains the specified string
+      if (content.includes('AWS::Serverless-2016-10-31')) {
+        console.log('SAM template file found:', file);
+        return filePath;
+      }
+    }
+  }
+
+  console.log('Template file not found. Will not be able to route events locally.');
+  return null;
+}
+
 module.exports = {
   parse,
   stringify,
-  format  
+  format,
+  findSAMTemplateFile
 };

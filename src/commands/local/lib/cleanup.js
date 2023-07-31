@@ -62,6 +62,7 @@ const updatePromises = functions.map(async functionName => {
         Timeout: func.Properties.Timeout,
         MemorySize: func.Properties.MemorySize,
         Handler: func.Properties.Handler,
+        Runtime: func.Properties.Runtime,
       }));
 
       // Sleep 1 second to avoid throttling

@@ -5,7 +5,6 @@ import { STSClient, GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import fs from 'fs';
 import path from 'path';
 import mqtt from 'mqtt';
-import { routeEvent } from "./event-router.js";
 import os, { homedir } from 'os';
 import { yamlParse } from 'yaml-cfn'
 import { CloudFormationClient, ListStackResourcesCommand, GetTemplateCommand } from '@aws-sdk/client-cloudformation';
@@ -15,6 +14,8 @@ import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import { fork, spawnSync } from 'child_process';
 import samConfigParser from '../../../shared/samConfigParser.js';
+import { locateHandler} from "./handler-finder.js";
+import { findSAMTemplateFile } from "../../../shared/parser.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const mac = getMac();
@@ -201,7 +202,7 @@ if (!fs.existsSync(".lambda-debug")) {
   functions = config.functions;
   template = config.template;
 }
-const functionSources = functions.map(key => { return { uri: template.Resources[key].Properties.CodeUri || template.Globals?.Function?.CodeUri, handler: template.Resources[key].Properties.Handler, name: key } }).reduce((map, obj) => {
+const functionSources = functions.map(key => { return { uri: template.Resources[key].Properties.CodeUri || template.Globals?.Function?.CodeUri, handler: template.Resources[key].Properties.Handler, name: key, runtime: template.Resources[key].Properties.Runtime ||  template.Globals?.Function?.Runtime } }).reduce((map, obj) => {
   obj.uri = obj.uri || "";
   if (!obj.uri.endsWith("/")) {
     obj.uri = obj.uri + "/";
@@ -216,36 +217,18 @@ const functionSources = functions.map(key => { return { uri: template.Resources[
       baseDir = process.env.outDir + "/" + obj.uri;
     }
   }
-  const globals = template.Globals?.Function || {};
-  const handlerFolders = (obj.handler || globals.Handler).split('/');
-  const functionHandler = handlerFolders.pop();
-  // remove folders if they don't exist on dsk
-  handlerFolders.forEach((folder, index) => {
-    if (!fs.existsSync(`${process.cwd()}/${baseDir}${handlerFolders.slice(0, index + 1).join('/')}`)) {
-      handlerFolders.splice(index, 1);
-    }
-  });
-  obj.handler = handlerFolders.join('/');
-  const handler = (obj.handler + '/' + functionHandler.split('.')[0]).replace(/\/\//g, '/');
-  const handlerMethod = functionHandler.split('.')[1];
-  let jsExt = ".js";
-  for (const ext of [".js", ".mjs", ".jsx"]) {
-    if (fs.existsSync(`${process.cwd()}/${baseDir}${handler}${ext}`)) {
-      jsExt = ext;
-      break;
-    }
-  }
-  const module = `file://${`${process.cwd()}/${baseDir}${handler}${jsExt}`.replace(/\/\//g, '/')}`.replace('.samp-out/./', '.samp-out/');
+  const { module, handlerMethod, runtime } = locateHandler(template, obj, baseDir);
   map[obj.name] = {
     module,
-    handler: handlerMethod
+    handler: handlerMethod,
+    runtime,
   };
 
   return map;
 }, {});
 
 for (const source of Object.values(functionSources)) {
-  if (!fs.existsSync(fileURLToPath(source.module))) {
+  if (source.module && !fs.existsSync(fileURLToPath(source.module))) {
     console.log(`Function source ${source.module} does not exist. Have you compiled?`);
     process.exit(1);
   }
@@ -349,6 +332,7 @@ async function updateFunctions(func, lambdaClient) {
         FunctionName: functionName,
         Timeout: parseInt(process.env.SAMP_TIMEOUT || 60),
         MemorySize: 128,
+        Runtime: "nodejs18.x",
         Handler: 'relay.handler',
       });
       await lambdaClient.send(updateFunctionConfigurationCommand);
@@ -384,27 +368,3 @@ function debugInProgress() {
   return fs.existsSync(".lambda-debug");
 }
 
-function findSAMTemplateFile(directory) {
-  if (fs.existsSync("./cdk.json")) {
-    return ".samp-out/mock-template.yaml";
-  }
-  const files = fs.readdirSync(directory);
-
-  for (const file of files) {
-    const filePath = path.join(directory, file);
-
-    // Check if the file extension is .json, .yml, or .yaml
-    if (file.match(/\.(json|ya?ml)$/i)) {
-      const content = fs.readFileSync(filePath, 'utf8');
-
-      // Check if the content of the file contains the specified string
-      if (content.includes('AWS::Serverless-2016-10-31')) {
-        console.log('SAM template file found:', file);
-        return filePath;
-      }
-    }
-  }
-
-  console.log('Template file not found. Will not be able to route events locally.');
-  return null;
-}
