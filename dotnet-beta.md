@@ -9,7 +9,7 @@ Instructions
 2. Run `npm link`
 3. cd to your .NET Lambda project root (make sure it has been deployed and that you're targeting a test environment)
 4. Create `.vscode/launch.json` and `.vscode/tasks.json` files (see below). Should work for any IDE, but have only tried in vscode. Creation of these will be automated in the future.
-5. Run `samp local --profile <your aws profile>` and leave it running
+5. Run `samp local --profile <your aws profile>` and leave it running. (see `samp local --help` for all options)
 6. Hit F5 (or start debugging via the dropdown menu)
 
 `.vscode/launch.json`:
@@ -18,7 +18,7 @@ Instructions
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch delivery_notification",
+      "name": "Debug Lambda functions",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",      
