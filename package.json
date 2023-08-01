@@ -35,7 +35,7 @@
     "@aws-sdk/client-lambda": "^3.358.0",
     "@aws-sdk/client-schemas": "^3.358.0",
     "@aws-sdk/client-sfn": "^3.359.0",
-    "@aws-sdk/client-sts": "^3.348.0",
+    "@aws-sdk/client-sts": "^3.379.1",
     "@aws-sdk/credential-provider-sso": "^3.319.0",
     "@mhlabs/iam-policies-cli": "^1.0.5",
     "@octokit/rest": "^18.5.2",

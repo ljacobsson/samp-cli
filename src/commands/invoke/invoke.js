@@ -1,4 +1,7 @@
 const { CloudFormationClient, DescribeStackResourcesCommand } = require("@aws-sdk/client-cloudformation");
+const { STSClient } = require("@aws-sdk/client-sts");
+const { loadSharedConfigFiles } = require('@aws-sdk/shared-ini-file-loader');
+
 const { fromSSO } = require("@aws-sdk/credential-provider-sso");
 const lambdaInvoker = require("./lambdaInvoker");
 const stepFunctionsInvoker = require("./stepFunctionsInvoker");
@@ -24,13 +27,13 @@ async function run(cmd) {
     }
     const stackInfo = manifest.artifacts[stack];
     cmd.stackName = stack;
-    const region = stackInfo.environment.split("/")[3];
+    let region = stackInfo.environment.split("/")[3];
+    const configRegion = (await loadSharedConfigFiles()).configFile[cmd.profile]?.region;
     if (!cmd.region && region === "unknown-region") {
-      console.log("Unable to determine region from manifest.json. Please specify using --region");
-      process.exit(1);
+      region = configRegion;
     }
     if (!cmd.region) {
-      cmd.region = region;
+      cmd.region = region || configRegion;
     }
     if (!cmd.profile) {
       console.log("Using default profile. Override by setting --profile <your profile>");
@@ -45,15 +48,21 @@ async function run(cmd) {
     }
     if (!cmd.profile && params.profile) {
       console.log("Using AWS profile from config:", params.profile);
-      cmd.profile = params.profile;
+      cmd.profile = params.profile || cmd.profile;
     }
     if (!cmd.region && params.region) {
       console.log("Using AWS region from config:", params.region);
       cmd.region = params.region;
       region = params.region;
     }
+  } 
+
+  let credentials;
+  try {
+    credentials = await fromSSO({ profile: cmd.profile || 'default' })();
+  } catch (e) {
   }
-  const credentials = await fromSSO({ profile: cmd.profile })();
+
   if (!cmd.stackName) {
     console.error("Missing required option: --stack-name");
     process.exit(1);

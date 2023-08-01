@@ -14,20 +14,19 @@ import archiver from 'archiver';
 import { fileURLToPath } from 'url';
 import { fork, spawnSync } from 'child_process';
 import samConfigParser from '../../../shared/samConfigParser.js';
-import { locateHandler} from "./handler-finder.js";
-import { findSAMTemplateFile } from "../../../shared/parser.js";
+import { locateHandler } from "./handler-finder.js";
+import { findSAMTemplateFile, parse } from "../../../shared/parser.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const mac = getMac();
 let targetConfig = {};
 if (fs.existsSync(`samconfig.toml`)) {
   targetConfig = samConfigParser.parse();
-} else {
-  targetConfig = {
-    stack_name: process.env.SAMP_STACKNAME,
-    region: process.env.SAMP_REGION,
-    profile: process.env.SAMP_PROFILE
-  }
+}
+targetConfig = {
+  stack_name: targetConfig.stack_name || process.env.SAMP_STACKNAME,
+  region: targetConfig.region || process.env.SAMP_REGION,
+  profile: process.env.SAMP_PROFILE || targetConfig.profile,
 }
 console.log(`Using profile: ${targetConfig.profile || 'default'}`);
 
@@ -140,7 +139,7 @@ if (!fs.existsSync(".lambda-debug")) {
 
   const stackName = targetConfig.stack_name;
 
-  template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
+  template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
   stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
   let token = stack.NextToken;
   if (token) {
@@ -202,7 +201,7 @@ if (!fs.existsSync(".lambda-debug")) {
   functions = config.functions;
   template = config.template;
 }
-const functionSources = functions.map(key => { return { uri: template.Resources[key].Properties.CodeUri || template.Globals?.Function?.CodeUri, handler: template.Resources[key].Properties.Handler, name: key, runtime: template.Resources[key].Properties.Runtime ||  template.Globals?.Function?.Runtime } }).reduce((map, obj) => {
+const functionSources = functions.map(key => { return { uri: template.Resources[key].Properties.CodeUri || template.Globals?.Function?.CodeUri, handler: template.Resources[key].Properties.Handler, name: key, runtime: template.Resources[key].Properties.Runtime || template.Globals?.Function?.Runtime } }).reduce((map, obj) => {
   obj.uri = obj.uri || "";
   if (!obj.uri.endsWith("/")) {
     obj.uri = obj.uri + "/";
@@ -266,7 +265,7 @@ client.on('message', async function (topic, message) {
   if (obj.event === 'chunk') {
     eventQueue[obj.sessionId] = eventQueue[obj.sessionId] || [];
     eventQueue[obj.sessionId][obj.index] = obj.chunk;
-   
+
     if (Object.keys(eventQueue[obj.sessionId]).length === obj.totalChunks) {
       const merge = Object.keys(eventQueue[obj.sessionId]).map(p => eventQueue[obj.sessionId][p]).join('');
       delete eventQueue[obj.sessionId];

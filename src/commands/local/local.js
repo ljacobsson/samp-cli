@@ -13,9 +13,10 @@ const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('./runtime-env-finder');
 const { findSAMTemplateFile } = require('../../shared/parser');
 const { yamlParse } = require('yaml-cfn');
+const parser = require('../../shared/parser');
 let env;
 function setEnvVars(cmd) {
-  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
+  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || "default";
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
   process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || process.env.stackName;
   process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH;
@@ -82,7 +83,7 @@ async function run(cmd) {
 
 function setupSAM_dotnet() {
   const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
-  template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
+  template = parser.parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
 
   // fetch all functions
   const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Serverless::Function");

@@ -83,7 +83,7 @@ static void ThreadStart(object data)
     {
       // There's an ILambdaContext
       var type = parameters[1].ParameterType;
-      var p = JsonConvert.DeserializeObject(request.obj["event"].ToString(), typeof(LambdaContext));
+      var p = JsonConvert.DeserializeObject(request.obj["context"].ToString(), typeof(LambdaContext));
       parameterList.Add(p);
     }
 
