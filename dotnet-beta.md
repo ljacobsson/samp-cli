@@ -3,9 +3,10 @@ Prerequisites at time of writing:
 * Has to be a SAM project. CDK might come later
 * It assumes a folder structure where the SAM template is in the root, next to the `samconfig.toml` file
 * The SAM template can be in either JSON or YAML format and can be called anything with a `json`, `yml`, `yaml` or `.template` extension
+* You need to have npm/node isntalled on your system
 
 Instructions
-1. Clone this repo and check out this branch
+1. Clone this repo and check out this branch (`dotnet-support`)
 2. Run `npm link`
 3. cd to your .NET Lambda project root (make sure it has been deployed and that you're targeting a test environment)
 4. Create `.vscode/launch.json` and `.vscode/tasks.json` files (see below). Should work for any IDE, but have only tried in vscode. Creation of these will be automated in the future.
