@@ -1,4 +1,4 @@
-Prerequesistes at time of writing:
+Prerequisites at time of writing:
 * Function runtime should be `dotnet6`
 * Has to be a SAM project. CDK might come later
 * It assumes a folder structure where the SAM template is in the root, next to the `samconfig.toml` file
