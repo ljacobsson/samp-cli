@@ -1,0 +1,9 @@
+{
+  "tasks": [
+    {
+      "label": "samp-local-cleanup",
+      "type": "shell",
+      "command": "samp local --force-restore"
+    }
+  ]
+}

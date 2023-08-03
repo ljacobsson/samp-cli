@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch delivery_notification",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",      
+      "program": "${workspaceFolder}/.samp-out/bin/Debug/net6.0/dotnet.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}

@@ -9,47 +9,9 @@ Prerequisites at time of writing:
 1. Clone this repo and check out this branch (`dotnet-support`)
 2. Run `npm link`
 3. cd to your .NET Lambda project root (make sure it has been deployed and that you're targeting a test environment)
-4. Create `.vscode/launch.json` and `.vscode/tasks.json` files (see below). Should work for any IDE, but have only tried in vscode. Creation of these will be automated in the future.
-5. Run `samp local --profile <your aws profile>` and leave it running. (see `samp local --help` for all options)
+4. Run `samp local --debug` and follow the prompts. This will create/append to `launch.json` and `tasks.json` in your `.vscode` folder with the necessary launch configuration
+5. Run `samp local` and leave it running. (see `samp local --help` for all options)
 6. Hit F5 (or start debugging via the dropdown menu)
-
-`.vscode/launch.json`:
-```
-{
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Debug Lambda functions",
-      "type": "coreclr",
-      "request": "launch",
-      "preLaunchTask": "build",      
-      "program": "${workspaceFolder}/.samp-out/bin/Debug/net6.0/dotnet.dll",
-      "args": [],
-      "cwd": "${workspaceFolder}",
-      "stopAtEntry": false,
-      "console": "internalConsole"
-    }
-  ]
-}
-```
-
-`.vscode/tasks.json`:
-```
-{
-  "tasks": [
-    {
-      "label": "build",
-      "command": "dotnet",
-      "type": "process",
-      "args": [
-        "build",
-        "${workspaceFolder}/.samp-out/dotnet.csproj"
-      ],
-      "problemMatcher": "$msCompile"
-    },
-  ]
-}
-```
 
 When you're done debugging, exit the `samp local` process with Ctrl+C and you functions will be restored to run in the cloud again.
 
