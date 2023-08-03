@@ -26,7 +26,7 @@ if (fs.existsSync(`samconfig.toml`)) {
 targetConfig = {
   stack_name: targetConfig.stack_name || process.env.SAMP_STACKNAME,
   region: targetConfig.region || process.env.SAMP_REGION,
-  profile: process.env.SAMP_PROFILE || targetConfig.profile,
+  profile: targetConfig.profile || process.env.SAMP_PROFILE
 }
 console.log(`Using profile: ${targetConfig.profile || 'default'}`);
 
