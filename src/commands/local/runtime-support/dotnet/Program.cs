@@ -1,4 +1,10 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -6,9 +12,11 @@ internal class Program
 {
   private static void Main(string[] args)
   {
+    const string basePath = "";
     static void Main(string[] args)
     {
-      string folderPath = ".samp-out/requests";
+
+      string folderPath = $"{basePath}requests";
       // create folder if it doesn't exist
       if (!Directory.Exists(folderPath))
       {
@@ -62,7 +70,7 @@ internal class Program
       {
         var className = split?[1];
         var method = split?[2];
-        var assembly = Assembly.LoadFrom($".samp-out/bin/Debug/net6.0/{split?[0]}.dll");
+        var assembly = Assembly.LoadFrom($"{basePath}bin/Debug/net6.0/{split?[0]}.dll");
         var classType = assembly.GetType(className ?? "");
         var context = new LambdaContext();
 
@@ -109,7 +117,7 @@ internal class Program
           Console.WriteLine("Error: Could not find responses directory.");
           return;
         }
-        
+
         if (response is Task)
         {
           var task = response as Task;

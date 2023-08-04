@@ -14,6 +14,7 @@ const runtimeEnvFinder = require('./runtime-env-finder');
 const { findSAMTemplateFile } = require('../../shared/parser');
 const { yamlParse } = require('yaml-cfn');
 const parser = require('../../shared/parser');
+const dotnetRuntimeSupport = require('./runtime-setup-sam-dotnet');
 let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || "default";
@@ -106,7 +107,8 @@ function setupSAM_dotnet() {
   csproj = csproj.replace("<!-- Projects -->", "");
   fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
 
-  setupSAM_JS();
+  dotnetRuntimeSupport.run();
+
 }
 function setupSAM_JS() {
   const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
@@ -270,6 +272,13 @@ async function setupDebug(cmd) {
     if (ide === "other") {
       console.log("Can't create debug config for other IDEs yet. Please create the launch config manually.");
       return;
+    }
+    if (ide === "rider") {
+      const launchConfig = fs.readFileSync(`${__dirname}/runtime-support/${runtime}/ide-support/rider/config.xml`, "utf8");
+      if (!fs.existsSync(`${pwd}/.run`)) {
+        fs.mkdirSync(`${pwd}/.run`);
+      }
+      fs.writeFileSync(`${pwd}/.run/${name}.run.xml`, launchConfig);
     }
     if (ide === "vscode") {
       const launchConfig = require(`./runtime-support/${runtime}/ide-support/vscode/launch.json`);
