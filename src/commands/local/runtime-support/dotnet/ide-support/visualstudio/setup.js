@@ -1,12 +1,27 @@
 const fs = require("fs");
+const JSON = require('comment-json')
 
 const pwd = process.cwd();
 function copyConfig(name) {
-  const launchConfig = fs.readFileSync(`${__dirname}/config.xml`, "utf8");
-  if (!fs.existsSync(`${pwd}/.run`)) {
-    fs.mkdirSync(`${pwd}/.run`);
+  launchSettings = {
   }
-  fs.writeFileSync(`${pwd}/.run/${name}.run.xml`, launchConfig);
+  try {
+    launchSettings = JSON.parse(fs.readFileSync(`Properties/launchSettings.json`, "utf8"));
+  } catch (error) {
+  }
+
+  launchSettings["Debug Lambda functions"] = {
+    "commandName": "Executable",
+    "executablePath": "$(SolutionDir).samp-out\\bin\\Debug\\net6.0\\dotnet.exe",
+    "workingDirectory": "$(SolutionDir).samp-out",
+    "remoteDebugEnabled": false
+  }
+
+  if (!fs.existsSync(`${pwd}/Properties`)) {
+    fs.mkdirSync(`${pwd}/Properties`);
+  }
+
+  fs.writeFileSync(`${pwd}/Properties/launchSettings.json`, JSON.stringify(launchSettings, null, 2));
 }
 
 module.exports = {
