@@ -5,8 +5,16 @@ export async function routeEvent(obj, stack, functionSources) {
     const event = obj.event;
     const context = obj.context;
     process.env = { ...obj.envVars, LOCAL_DEBUG: true };
+    let logicalId;
+    try {
+      logicalId = stack.StackResourceSummaries.find(resource => resource.PhysicalResourceId === context.functionName).LogicalResourceId;
+    } catch (e) {
+    }
 
-    const logicalId = stack.StackResourceSummaries.find(resource => resource.PhysicalResourceId === context.functionName).LogicalResourceId;
+    if (!logicalId) {
+      return { error: "Could not find function in stack", skipResponse: true };
+    }
+
     if (functionSources[logicalId].runtime.startsWith("nodejs")) {
       const modulePath = functionSources[logicalId].module;
       const module = await import(modulePath);
@@ -18,9 +26,10 @@ export async function routeEvent(obj, stack, functionSources) {
       if (!fs.existsSync(".samp-out/responses")) fs.mkdirSync(".samp-out/responses");
       fs.writeFileSync(".samp-out/requests/" + obj.context.awsRequestId, JSON.stringify({ func: functionSources[logicalId].handler, obj }, null, 2));
       // await file to be written to .samp-out/responses
+        
       return await new Promise((resolve, reject) => {
         const filePath = `.samp-out/responses/${context.awsRequestId}`;
-    
+
         const watcher = fs.watch(".samp-out/responses", (eventType, filename) => {
           if (filename === context.awsRequestId) {
             watcher.close(); // Close the watcher to stop monitoring changes
@@ -33,6 +42,10 @@ export async function routeEvent(obj, stack, functionSources) {
             });
           }
         });
+        // setTimeout(() => {
+        //   watcher.close();
+        //   resolve("Timeout");
+        // }, 10000);
       });
     }
   } catch (error) {
@@ -45,8 +58,10 @@ if (process.argv.length > 3) {
   const stack = JSON.parse(process.argv[3]);
   const functionSources = JSON.parse(process.argv[4]);
   routeEvent(obj, stack, functionSources).then((result) => {
-    const response = typeof result === "string" ? result : JSON.stringify(result, null, 2);
-    process.send(response || "");
+    if (!result.skipResponse) {
+      const response = typeof result === "string" ? result : JSON.stringify(result, null, 2);
+      process.send(response || "");
+    }
     process.exit(0);
   }
   );

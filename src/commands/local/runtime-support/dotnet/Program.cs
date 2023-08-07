@@ -79,15 +79,16 @@ internal class Program
           Console.WriteLine("Class or method not found.");
           return;
         }
-        var instance = Activator.CreateInstance(classType);
-        var methodInfo = classType.GetMethod(method);
-        var parameters = methodInfo?.GetParameters();
-        var parameterList = new List<object>();
 
         foreach (JProperty prop in request?.obj["envVars"].Properties() ?? Enumerable.Empty<JProperty>())
         {
           Environment.SetEnvironmentVariable(prop.Name, prop.Value.ToString());
         }
+
+        var instance = Activator.CreateInstance(classType);
+        var methodInfo = classType.GetMethod(method);
+        var parameters = methodInfo?.GetParameters();
+        var parameterList = new List<object>();
 
         // The method will have 0, 1 or 2 parameters. The first parameter is the payload, the second is the ILambdaContext
         if (parameters?.Length > 0)
