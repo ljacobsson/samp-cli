@@ -6,7 +6,6 @@ const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
 const { findConstructs } = require('./cdk-construct-finder');
-const commentJson = require('comment-json')
 const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
@@ -182,8 +181,6 @@ async function setupDebug(cmd) {
   let region = cmd.region || targetConfig.region;
   let profile = cmd.profile || targetConfig.profile;
 
-  const pwd = process.cwd();
-
   if (env.iac === "cdk") {
     const constructs = findConstructs();
     constructs.push("Enter manually");
@@ -252,75 +249,24 @@ async function setupDebug(cmd) {
 
     args.push("--functions", selectedFunctions.join(","));
   }
-  let launchJson;
-  if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
-    let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
-    launchJson = commentJson.parse(fileContent);
-  } else {
-    launchJson = {
-      "version": "0.2.0",
-      "configurations": []
-    };
-  }
-  const existingConfig = launchJson.configurations.find(c => c.name === name);
-  if (existingConfig) {
-    console.log("Debug config already exists");
-  } else {
-    const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
-    let ide = cmd.ide || await inputUtil.autocomplete("Which IDE do you use?", ["VsCode", "Rider", "Other"]);
-    ide = ide.toLowerCase();
-    if (ide === "other") {
-      console.log("Can't create debug config for other IDEs yet. Please create the launch config manually.");
-      return;
-    }
-    if (ide === "rider") {
-      const launchConfig = fs.readFileSync(`${__dirname}/runtime-support/${runtime}/ide-support/rider/config.xml`, "utf8");
-      if (!fs.existsSync(`${pwd}/.run`)) {
-        fs.mkdirSync(`${pwd}/.run`);
-      }
-      fs.writeFileSync(`${pwd}/.run/${name}.run.xml`, launchConfig);
-    }
-    if (ide === "vscode") {
-      const launchConfig = require(`./runtime-support/${runtime}/ide-support/vscode/launch.json`);
-      const taskConfig = require(`./runtime-support/${runtime}/ide-support/vscode/tasks.json`);
 
-      launchConfig.configurations[0].name = name;
-      launchConfig.configurations[0].args = args;
-      launchJson.configurations.push(launchConfig.configurations[0]);
-
-      const task = taskConfig.tasks[0];
-      let tasksJson;
-      if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
-        tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
-        const existingTask = tasksJson.tasks.find(t => t.label === "samp-local-cleanup");
-        if (!existingTask) {
-          tasksJson.tasks.push(task);
-        }
-      } else {
-        tasksJson = {
-          "version": "2.0.0",
-          "tasks": [task]
-        };
-      }
-      if (!fs.existsSync(`${pwd}/.vscode`)) {
-        fs.mkdirSync(`${pwd}/.vscode`);
-      }
-      fs.writeFileSync(`${pwd}/.vscode/launch.json`, commentJson.stringify(launchJson, null, 2));
-      fs.writeFileSync(`${pwd}/.vscode/tasks.json`, commentJson.stringify(tasksJson, null, 2));
-    }
+  const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
+  let ide = cmd.ide || await inputUtil.autocomplete("Which IDE do you use?", ["VsCode", "Rider", "VisualStudio", "Other"]);
+  ide = ide.toLowerCase();
+  if (ide === "other") {
+    console.log("Can't create debug config for other IDEs yet. Please create the launch config manually.");
+    return;
   }
-  if (launchJson.configurations.length === 1) {
-    if (env.isNodeJS) {
-      console.log("Debug setup complete. You can now hit F5 to start debugging");
-    } else {
-      console.log("Debug setup complete. You can now start debugging by running `samp local` and hit F5");
-    }
+  try {
+    require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
+  } catch(e) {
+    console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
+    process.exit(1);
+  }
+  if (env.isNodeJS) {
+    console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
   } else {
-    if (env.isNodeJS) {
-      console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
-    } else {
-      console.log("Debug setup complete. You can now run `samp local`, select the debug configuration from the dropdown and hit F5 to start debugging");
-    }
+    console.log("Debug setup complete. You can now run `samp local`, select the debug configuration from the dropdown and hit F5 to start debugging");
   }
 }
 
