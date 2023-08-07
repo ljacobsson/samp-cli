@@ -131,6 +131,10 @@ The `--force-restore` flag is useful if you want to restore the original Lambda 
 #### Debugging with VS Code
 In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
 
+#### Supported runtimes
+* NodeJs (JavaScript and TypeScript)
+* .NET 6.0 (C#) - See .NEt specific documentation [here](./docs/dotnet.md)
+
 #### How does it work?
 The tool temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). The functions are automatically restored when you exit the debugging session with the values in your processed CloudFormation tempate. The tool also sets the MemorySize to 128MB and Timeout to 60 seconds to avoid timeouts during debugging as well as saving cost.
 
@@ -166,7 +170,7 @@ Options:
   -h, --help                          display help for command
 ```
 
-![Demo](images/demo-console.gif
+![Demo](images/demo-console.gif)
 
 ### samp generate
 Generates SAM resources, CDK code, StepFunctions ASL and Lambda functions in any language based on a query to ChatGPT. If you ask for SAM resources, it will merges them into your existing template. 

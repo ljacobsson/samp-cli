@@ -20,7 +20,6 @@ export function locateJsHandler(template, obj, baseDir) {
       break;
     }
   }
-  console.log("jsExt", jsExt);
   const module = `file://${`${process.cwd()}/${baseDir}${handler}${jsExt}`.replace(/\/\//g, '/')}`.replace('.samp-out/./', '.samp-out/');
   return { module, handlerMethod, runtime: obj.runtime || globals.Runtime || "nodejs18.x" };
 }

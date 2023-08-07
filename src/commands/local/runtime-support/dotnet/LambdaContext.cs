@@ -1,3 +1,4 @@
+using System;
 using Amazon.Lambda.Core;
 
 internal class LambdaContext : ILambdaContext

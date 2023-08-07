@@ -6,16 +6,17 @@ const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
 const { findConstructs } = require('./cdk-construct-finder');
-const commentJson = require('comment-json')
 const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('./runtime-env-finder');
 const { findSAMTemplateFile } = require('../../shared/parser');
 const { yamlParse } = require('yaml-cfn');
+const parser = require('../../shared/parser');
+const dotnetRuntimeSupport = require('./runtime-setup-sam-dotnet');
 let env;
 function setEnvVars(cmd) {
-  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE;
+  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || "default";
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
   process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || process.env.stackName;
   process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH;
@@ -50,14 +51,14 @@ async function run(cmd) {
   }
 
   let initialised = false;
-  if (env === "cdk-ts") {
+  if (env.iac === "cdk" && env.functionLanguage == "ts") {
     initialised = setupCDK_TS(initialised, cmd);
   }
-  else if (env === "sam-ts") {
+  else if (env.iac === "sam" && env.functionLanguage == "ts") {
     initialised = setupSAM_TS(initialised);
-  } else if (env === "sam-js") {
+  } else if (env.iac === "sam" && env.functionLanguage == "js") {
     setupSAM_JS();
-  } else if (env === "sam-dotnet") {
+  } else if (env.iac === "sam" && env.functionLanguage == "dotnet") {
     setupSAM_dotnet();
   }
 
@@ -82,7 +83,7 @@ async function run(cmd) {
 
 function setupSAM_dotnet() {
   const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
-  template = yamlParse(fs.readFileSync(findSAMTemplateFile('.')).toString());
+  template = parser.parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
 
   // fetch all functions
   const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Serverless::Function");
@@ -98,14 +99,15 @@ function setupSAM_dotnet() {
   fs.cpSync(`${__dirname}/runtime-support/dotnet`, `.samp-out/`, { recursive: true });
 
   let csproj = fs.readFileSync(`.samp-out/dotnet.csproj`, 'utf8');
-  
+
   for (const codeUri of uniqueCodeURIs) {
     csproj = csproj.replace("<!-- Projects -->", projectReferenceTemplate.replace("%code_uri%", codeUri) + "\n<!-- Projects -->");
   }
   csproj = csproj.replace("<!-- Projects -->", "");
   fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
 
-  setupSAM_JS();
+  dotnetRuntimeSupport.run();
+
 }
 function setupSAM_JS() {
   const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
@@ -171,14 +173,15 @@ function print(data) {
 }
 
 async function setupDebug(cmd) {
+  const env = runtimeEnvFinder.determineRuntime();
   let credentials;
   let targetConfig = samConfigParser.parse();
   let args = ["local"];
   let stack = cmd.stackName || targetConfig.stack_name;
   let region = cmd.region || targetConfig.region;
   let profile = cmd.profile || targetConfig.profile;
-  const pwd = process.cwd();
-  if (fs.existsSync(`cdk.json`)) {
+
+  if (env.iac === "cdk") {
     const constructs = findConstructs();
     constructs.push("Enter manually");
     let construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
@@ -221,88 +224,50 @@ async function setupDebug(cmd) {
   } catch (e) {
   }
 
-  const cloudFormation = new CloudFormationClient({ credentials, region });
-
   const functions = [];
-  let token;
-  do {
-    try {
-      const response = await cloudFormation.send(new ListStackResourcesCommand({ StackName: stack, NextToken: token }));
-      functions.push(...response.StackResourceSummaries.filter(r => r.ResourceType === "AWS::Lambda::Function"));
-      token = response.NextToken;
-    } catch (e) {
-      console.log(`Failed to list stack resources for stack '${stack}' in '${region}' using profile '${profile}'.`, e.message);
-      process.exit(1);
-    }
-  } while (token);
+  let name = "Debug Lambda functions"
+  if (env.isNodeJS) {
 
-  const functionNames = functions.map(f => f.LogicalResourceId);
-  const selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
-  const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
-  const name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
-  args.push("--functions", selectedFunctions.join(","));
+    const cloudFormation = new CloudFormationClient({ credentials, region });
 
-  let launchJson;
-  if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
-    let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
-    launchJson = commentJson.parse(fileContent);
-  } else {
-    launchJson = {
-      "version": "0.2.0",
-      "configurations": []
-    };
-  }
-  const existingConfig = launchJson.configurations.find(c => c.name === name);
-  if (existingConfig) {
-    console.log("Debug config already exists");
-  } else {
+    let token;
+    do {
+      try {
+        const response = await cloudFormation.send(new ListStackResourcesCommand({ StackName: stack, NextToken: token }));
+        functions.push(...response.StackResourceSummaries.filter(r => r.ResourceType === "AWS::Lambda::Function"));
+        token = response.NextToken;
+      } catch (e) {
+        console.log(`Failed to list stack resources for stack '${stack}' in '${region}' using profile '${profile}'.`, e.message);
+        process.exit(1);
+      }
+    } while (token);
 
-    launchJson.configurations.push({
-      type: "node",
-      request: "launch",
-      name,
-      runtimeExecutable: "samp",
-      args,
-      env: {
-        muteParentOutput: "true"
-      },
-      skipFiles: [
-        "<node_internals>/**"
-      ],
-      postDebugTask: "samp-local-cleanup"
-    });
+    const functionNames = functions.map(f => f.LogicalResourceId);
+    const selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
+    const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
+    name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
+
+    args.push("--functions", selectedFunctions.join(","));
   }
 
-  const task = {
-    label: "samp-local-cleanup",
-    type: "shell",
-    command: "samp local --force-restore",
+  const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
+  let ide = cmd.ide || await inputUtil.autocomplete("Which IDE do you use?", ["VsCode", "Rider", "VisualStudio", "Other"]);
+  ide = ide.toLowerCase();
+  if (ide === "other") {
+    console.log("Can't create debug config for other IDEs yet. Please create the launch config manually.");
+    return;
   }
-  let tasksJson;
-  if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
-    tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
-    const existingTask = tasksJson.tasks.find(t => t.label === "samp-local-cleanup");
-    if (!existingTask) {
-      tasksJson.tasks.push(task);
-    }
-  } else {
-    tasksJson = {
-      "version": "2.0.0",
-      "tasks": [task]
-    };
+  try {
+    require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
+  } catch(e) {
+    console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
+    process.exit(1);
   }
-  if (!fs.existsSync(`${pwd}/.vscode`)) {
-    fs.mkdirSync(`${pwd}/.vscode`);
-  }
-  fs.writeFileSync(`${pwd}/.vscode/launch.json`, commentJson.stringify(launchJson, null, 2));
-  fs.writeFileSync(`${pwd}/.vscode/tasks.json`, commentJson.stringify(tasksJson, null, 2));
-
-  if (launchJson.configurations.length === 1) {
-    console.log("Debug setup complete. You can now hit F5 to start debugging");
-  } else {
+  if (env.isNodeJS) {
     console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
+  } else {
+    console.log("Debug setup complete. You can now run `samp local`, select the debug configuration from the dropdown and hit F5 to start debugging");
   }
-
 }
 
 async function warn() {
@@ -318,7 +283,7 @@ async function warn() {
 }
 
 function validate(env) {
-  if (env.includes('dotnet')) {
+  if (env.isNodeJS) {
     if (!fs.existsSync("package.json")) {
       console.log("Warning - no package.json found. This command expects a package.json file to exist in the project root directory. If you use one package.json per function sub-folder, please run 'samp local --merge-package-jsons' to create a package.json file in the project root directory followed by npm install");
       return true;

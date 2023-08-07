@@ -31,7 +31,7 @@ function findSAMTemplateFile(directory) {
     const filePath = path.join(directory, file);
 
     // Check if the file extension is .json, .yml, or .yaml
-    if (file.match(/\.(json|ya?ml)$/i)) {
+    if (file.match(/\.(json|ya?ml|template)$/i)) {
       const content = fs.readFileSync(filePath, 'utf8');
 
       // Check if the content of the file contains the specified string
