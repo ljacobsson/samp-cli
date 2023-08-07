@@ -12,6 +12,15 @@ internal class Program
 {
   private static void Main(string[] args)
   {
+    JsonConvert.DefaultSettings = () => new JsonSerializerSettings
+    {
+      Formatting = Formatting.Indented,
+      Error = (sender, args) =>
+      {
+        Console.WriteLine("Handled exception: " + args.ErrorContext.Error.Message);
+        args.ErrorContext.Handled = true;
+      }
+    };
     const string basePath = "";
     static void Main(string[] args)
     {
@@ -114,7 +123,8 @@ internal class Program
         var response = methodInfo.Invoke(instance, parameterList.ToArray());
         var responsesDir = e?.FullPath.Replace("requests", "responses");
 
-        if (responsesDir == null) {
+        if (responsesDir == null)
+        {
           Console.WriteLine("Error: Could not find responses directory.");
           return;
         }

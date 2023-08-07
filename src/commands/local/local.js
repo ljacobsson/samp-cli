@@ -59,7 +59,7 @@ async function run(cmd) {
   } else if (env.iac === "sam" && env.functionLanguage == "js") {
     setupSAM_JS();
   } else if (env.iac === "sam" && env.functionLanguage == "dotnet") {
-    setupSAM_dotnet();
+    await setupSAM_dotnet();
   }
 
   // catch ctrl+c event and exit normally
@@ -81,7 +81,7 @@ async function run(cmd) {
   });
 }
 
-function setupSAM_dotnet() {
+async function setupSAM_dotnet() {
   const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
   template = parser.parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
 
@@ -106,7 +106,7 @@ function setupSAM_dotnet() {
   csproj = csproj.replace("<!-- Projects -->", "");
   fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
 
-  dotnetRuntimeSupport.run();
+  await dotnetRuntimeSupport.run();
 
 }
 function setupSAM_JS() {
@@ -258,7 +258,7 @@ async function setupDebug(cmd) {
     return;
   }
   try {
-    require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
+    await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
   } catch(e) {
     console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
     process.exit(1);

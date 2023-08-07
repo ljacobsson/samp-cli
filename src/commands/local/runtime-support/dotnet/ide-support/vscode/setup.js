@@ -1,11 +1,8 @@
 const fs = require("fs");
 const commentJson = require('comment-json')
-const runtimeEnvFinder = require('../../../../runtime-env-finder');
-
-const env = runtimeEnvFinder.determineRuntime();
 
 const pwd = process.cwd();
-function copyConfig(name, args) {
+async function copyConfig(name, args) {
   let launchJson;
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
     let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
@@ -17,7 +14,6 @@ function copyConfig(name, args) {
     };
   }
   const launchConfig = require(`${__dirname}/launch.json`);
-  const taskConfig = require(`${__dirname}/tasks.json`);
 
   launchConfig.configurations[0].name = name;
   launchConfig.configurations[0].args = args;
@@ -33,25 +29,10 @@ function copyConfig(name, args) {
     });
   }
 
-  const task = taskConfig.tasks[0];
-  let tasksJson;
-  if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
-    tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
-    const existingTask = tasksJson.tasks.find(t => t.label === "samp-local-cleanup");
-    if (!existingTask) {
-      tasksJson.tasks.push(task);
-    }
-  } else {
-    tasksJson = {
-      "version": "2.0.0",
-      "tasks": [task]
-    };
-  }
   if (!fs.existsSync(`${pwd}/.vscode`)) {
     fs.mkdirSync(`${pwd}/.vscode`);
   }
   fs.writeFileSync(`${pwd}/.vscode/launch.json`, commentJson.stringify(launchJson, null, 2));
-  fs.writeFileSync(`${pwd}/.vscode/tasks.json`, commentJson.stringify(tasksJson, null, 2));
 }
 
 module.exports = {
