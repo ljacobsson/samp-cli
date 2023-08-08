@@ -5,7 +5,6 @@
       "name": "Launch delivery_notification",
       "type": "coreclr",
       "request": "launch",
-      "preLaunchTask": "build",      
       "program": "${workspaceFolder}/.samp-out/bin/Debug/net6.0/dotnet.dll",
       "args": [],
       "cwd": "${workspaceFolder}/.samp-out",
