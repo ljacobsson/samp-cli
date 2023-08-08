@@ -42,7 +42,7 @@ function findSAMTemplateFile(directory) {
     }
   }
 
-  console.log('Template file not found. Will not be able to route events locally.');
+  console.log('Template file not found.');
   return null;
 }
 

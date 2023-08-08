@@ -10,10 +10,6 @@ const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('./runtime-env-finder');
-const { findSAMTemplateFile } = require('../../shared/parser');
-const { yamlParse } = require('yaml-cfn');
-const parser = require('../../shared/parser');
-const dotnetRuntimeSupport = require('./runtime-setup-sam-dotnet');
 let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || "default";
@@ -58,8 +54,8 @@ async function run(cmd) {
     initialised = setupSAM_TS(initialised);
   } else if (env.iac === "sam" && env.functionLanguage == "js") {
     setupSAM_JS();
-  } else if (env.iac === "sam" && env.functionLanguage == "dotnet") {
-    await setupSAM_dotnet();
+  } else  {
+    await require(`./runtime-support/${env.functionLanguage}/iac-support/${env.iac}`).setup(cmd);
   }
 
   // catch ctrl+c event and exit normally
@@ -81,34 +77,6 @@ async function run(cmd) {
   });
 }
 
-async function setupSAM_dotnet() {
-  const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
-  template = parser.parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
-
-  // fetch all functions
-  const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Serverless::Function");
-  const codeURIs = functions.map(f => {
-    const props = template.Resources[f].Properties
-    const codeUri = (props.CodeUri || template.Globals.Function.CodeUri + "/").replace(/\/\//g, "/");
-    const project = props.Handler.split("::")[0];
-    return `\\${codeUri}\\${project}`;
-  });
-
-  const uniqueCodeURIs = [...new Set(codeURIs)];
-  console.log('Copying dotnet project');
-  fs.cpSync(`${__dirname}/runtime-support/dotnet`, `.samp-out/`, { recursive: true });
-
-  let csproj = fs.readFileSync(`.samp-out/dotnet.csproj`, 'utf8');
-
-  for (const codeUri of uniqueCodeURIs) {
-    csproj = csproj.replace("<!-- Projects -->", projectReferenceTemplate.replace("%code_uri%", codeUri) + "\n<!-- Projects -->");
-  }
-  csproj = csproj.replace("<!-- Projects -->", "");
-  fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
-
-  await dotnetRuntimeSupport.run();
-
-}
 function setupSAM_JS() {
   const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
   childProcess.stdout.on('data', (data) => print(data));

@@ -22,15 +22,15 @@ export async function routeEvent(obj, stack, functionSources) {
     } else {
       // write to disk
       if (!fs.existsSync(".samp-out")) fs.mkdirSync(".samp-out");
-      if (!fs.existsSync(".samp-out/requests")) fs.mkdirSync(".samp-out/requests");
-      if (!fs.existsSync(".samp-out/responses")) fs.mkdirSync(".samp-out/responses");
-      fs.writeFileSync(".samp-out/requests/" + obj.context.awsRequestId, JSON.stringify({ func: functionSources[logicalId].handler, obj }, null, 2));
+      if (!fs.existsSync(".samp-out/samp-requests")) fs.mkdirSync(".samp-out/samp-requests");
+      if (!fs.existsSync(".samp-out/samp-responses")) fs.mkdirSync(".samp-out/samp-responses");
+      fs.writeFileSync(".samp-out/samp-requests/" + obj.context.awsRequestId, JSON.stringify({ func: functionSources[logicalId].handler, module: functionSources[logicalId].module, obj }, null, 2));
       // await file to be written to .samp-out/responses
         
       return await new Promise((resolve, reject) => {
-        const filePath = `.samp-out/responses/${context.awsRequestId}`;
+        const filePath = `.samp-out/samp-responses/${context.awsRequestId}`;
 
-        const watcher = fs.watch(".samp-out/responses", (eventType, filename) => {
+        const watcher = fs.watch(".samp-out/samp-responses", (eventType, filename) => {
           if (filename === context.awsRequestId) {
             watcher.close(); // Close the watcher to stop monitoring changes
             fs.readFile(filePath, "utf-8", (err, data) => {

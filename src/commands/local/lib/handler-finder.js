@@ -30,7 +30,26 @@ export function locateDotnetHandler(template, obj, baseDir) {
   return { handlerMethod, runtime: obj.runtime };
 }
 
+export function locatePythonHandler(template, obj, baseDir) {
+  const globals = template.Globals?.Function || {};
+  const handlerFolders = (obj.handler || globals.Handler).split('/');
+  const functionHandler = handlerFolders.pop();
+  // remove folders if they don't exist on disk
+  handlerFolders.forEach((folder, index) => {
+    if (!fs.existsSync(`${process.cwd()}/${baseDir}${handlerFolders.slice(0, index + 1).join('/')}`)) {
+      handlerFolders.splice(index, 1);
+    }
+  });
+  obj.handler = handlerFolders.join('/');
+  const handler = (obj.handler + '/' + functionHandler.split('.')[0]).replace(/\/\//g, '/');
+  const handlerMethod = functionHandler.split('.')[1];
+  let pyExt = ".py";
+  const module = `file://${`${process.cwd()}/${baseDir}${handler}${pyExt}`.replace(/\/\//g, '/')}`.replace('.samp-out/./', '.samp-out/');
+  return { module, handlerMethod, runtime: obj.runtime || globals.Runtime || "python" };
+}
+
 export function locateHandler(template, obj, baseDir) {
   if (!obj.runtime || obj.runtime.startsWith("nodejs")) return locateJsHandler(template, obj, baseDir);
   if (obj.runtime.startsWith("dotnet")) return locateDotnetHandler(template, obj, baseDir);
+  if (obj.runtime.startsWith("python")) return locatePythonHandler(template, obj, baseDir);
 }
