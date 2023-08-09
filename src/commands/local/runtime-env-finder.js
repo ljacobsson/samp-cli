@@ -4,8 +4,7 @@ const { parse, findSAMTemplateFile } = require('../../shared/parser');
 
 function determineRuntime() {
   const templateFile = findSAMTemplateFile(process.cwd());
-
-  if (templateFile) {
+  if (templateFile && !templateFile.includes('mock')) {
 
     const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));    
     const firstFunction = Object.keys(template.Resources).find(key => template.Resources[key].Type === "AWS::Serverless::Function");
