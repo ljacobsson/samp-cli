@@ -1,5 +1,6 @@
 ﻿import importlib.util
 import os
+import re
 import time
 import json
 from watchdog.observers import Observer
@@ -40,12 +41,36 @@ def run_function_from_module(data, path):
 
     if hasattr(module, function_name):
         func = getattr(module, function_name)
-        response = func(data["obj"]["event"], data["obj"]["context"])
+        context = DictToObject(convert_camel_to_snake(data["obj"]["context"]))
+        response = func(data["obj"]["event"], context)
         response_file_path = path.replace("samp-requests", "samp-responses")
         with open(response_file_path, "w") as response_file:
             response_file.write(json.dumps(response)) 
     else:
         print(f"Function '{function_name}' not found in module '{module_name}'")
+        
+def camel_to_snake(name):
+    return re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower()
+
+def convert_camel_to_snake(data):
+    if isinstance(data, dict):
+        new_dict = {}
+        for key, value in data.items():
+            if isinstance(value, dict) or isinstance(value, list):
+                value = convert_camel_to_snake(value)
+                if value == "memory_limit_in_m_b":
+                    value = "memory_limit_in_mb"
+            new_key = camel_to_snake(key)
+            new_dict[new_key] = value
+        return new_dict
+    elif isinstance(data, list):
+        new_list = []
+        for item in data:
+            new_item = convert_camel_to_snake(item)
+            new_list.append(new_item)
+        return new_list
+    else:
+        return data
 
 class RequestFolderHandler(FileSystemEventHandler):
     def on_created(self, event):
@@ -65,6 +90,14 @@ def setup_file_listener():
     except KeyboardInterrupt:
         observer.stop()
     observer.join()
+
+class DictToObject:
+    def __init__(self, dictionary):
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                setattr(self, key, DictToObject(value))
+            else:
+                setattr(self, key, value)
 
 if __name__ == "__main__":
     setup_file_listener()

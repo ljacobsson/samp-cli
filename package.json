@@ -1,6 +1,6 @@
 {
   "name": "samp-cli",
-  "version": "1.0.33",
+  "version": "1.0.34",
   "description": "CLI tool for extended productivity with AWS Serverless Application Model (SAM)",
   "main": "index.js",
   "scripts": {
@@ -37,6 +37,7 @@
     "@aws-sdk/client-sfn": "^3.359.0",
     "@aws-sdk/client-sts": "^3.379.1",
     "@aws-sdk/credential-provider-sso": "^3.319.0",
+    "@aws-sdk/shared-ini-file-loader": "^3.374.0",
     "@mhlabs/iam-policies-cli": "^1.0.5",
     "@octokit/rest": "^18.5.2",
     "archiver": "^5.3.1",

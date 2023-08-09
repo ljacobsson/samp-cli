@@ -6,7 +6,7 @@
       "request": "launch",
       "program": "entrypoint.py",
       "cwd": "${workspaceFolder}/.samp-out",
-      "console": "integratedTerminal"
+      "console": "internalConsole"
     }
   ]
 }
