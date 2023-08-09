@@ -58,9 +58,9 @@ def convert_camel_to_snake(data):
         for key, value in data.items():
             if isinstance(value, dict) or isinstance(value, list):
                 value = convert_camel_to_snake(value)
-                if value == "memory_limit_in_m_b":
-                    value = "memory_limit_in_mb"
             new_key = camel_to_snake(key)
+            if new_key == "memory_limit_in_m_b":
+                new_key = "memory_limit_in_mb"
             new_dict[new_key] = value
         return new_dict
     elif isinstance(data, list):
