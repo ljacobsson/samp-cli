@@ -1,16 +1,12 @@
 {
-  "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch delivery_notification",
-      "type": "coreclr",
+      "name": "Debug Lambda functions",
+      "type": "python",
       "request": "launch",
-      "preLaunchTask": "build",      
-      "program": "${workspaceFolder}/.samp-out/bin/Debug/net6.0/dotnet.dll",
-      "args": [],
+      "program": "entrypoint.py",
       "cwd": "${workspaceFolder}/.samp-out",
-      "stopAtEntry": false,
-      "console": "internalConsole"
+      "console": "integratedTerminal"
     }
   ]
 }

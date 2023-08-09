@@ -7,8 +7,7 @@ function determineRuntime() {
 
   if (templateFile) {
 
-    const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));
-    console.log(template);
+    const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));    
     const firstFunction = Object.keys(template.Resources).find(key => template.Resources[key].Type === "AWS::Serverless::Function");
     const runtime = (template.Resources[firstFunction].Properties.Runtime || template.Globals?.Function?.Runtime).substring(0, 3);
     switch (runtime) {
