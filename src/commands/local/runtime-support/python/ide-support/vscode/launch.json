@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "name": "Debug Lambda functions",
+      "type": "python",
+      "request": "launch",
+      "program": "entrypoint.py",
+      "cwd": "${workspaceFolder}/.samp-out",
+      "console": "integratedTerminal"
+    }
+  ]
+}

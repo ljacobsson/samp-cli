@@ -25,7 +25,7 @@ internal class Program
     static void Main(string[] args)
     {
 
-      string folderPath = $"{basePath}requests";
+      string folderPath = $"{basePath}samp-requests";
       // create folder if it doesn't exist
       if (!Directory.Exists(folderPath))
       {
@@ -121,7 +121,7 @@ internal class Program
           return;
         }
         var response = methodInfo.Invoke(instance, parameterList.ToArray());
-        var responsesDir = e?.FullPath.Replace("requests", "responses");
+        var responsesDir = e?.FullPath.Replace("samp-requests", "samp-responses");
 
         if (responsesDir == null)
         {

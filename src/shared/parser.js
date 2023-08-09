@@ -36,13 +36,13 @@ function findSAMTemplateFile(directory) {
 
       // Check if the content of the file contains the specified string
       if (content.includes('AWS::Serverless-2016-10-31')) {
-        console.log('SAM template file found:', file);
+        //console.log('SAM template file found:', file);
         return filePath;
       }
     }
   }
 
-  console.log('Template file not found. Will not be able to route events locally.');
+  console.log('Template file not found.');
   return null;
 }
 
