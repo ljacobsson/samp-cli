@@ -6,7 +6,7 @@ function determineRuntime() {
   const templateFile = findSAMTemplateFile(process.cwd());
   if (templateFile && !templateFile.includes('mock')) {
 
-    const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));    
+    const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));
     const firstFunction = Object.keys(template.Resources).find(key => template.Resources[key].Type === "AWS::Serverless::Function");
     const runtime = (template.Resources[firstFunction].Properties.Runtime || template.Globals?.Function?.Runtime).substring(0, 3);
     switch (runtime) {
@@ -14,6 +14,8 @@ function determineRuntime() {
         return { iac: "sam", functionLanguage: "dotnet" };
       case "pyt":
         return { iac: "sam", functionLanguage: "python" };
+      case "jav":
+        return { iac: "sam", functionLanguage: "java" };
     }
   }
   if (fs.existsSync('cdk.json')) return { iac: "cdk", functionLanguage: "ts", isNodeJS: true };

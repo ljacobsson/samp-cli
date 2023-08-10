@@ -128,12 +128,37 @@ The `--force-restore` flag is useful if you want to restore the original Lambda 
 
 *Big thanks to [Jason Wadsworth](https://twitter.com/quizout) for all the early feedback on this feature <3*
 
-#### Debugging with VS Code / Visual Studio / Rider / PyCharm
-In order to debug with vscode you need to create a launch config and a shutdown task (to restore the original Lambda code in the cloud). You can set this up automatically by running `samp local --debug`
+#### How to debug
+1. Create a launch configuration and shutdown task (VS Code / NodeJS only)
+```
+sam local --debug
+```
+2. Set breakpoints in your code
+3. Select your debug configuration and start debugging
+4. When you're done debugging, make sure you kill the `samp local` process. For NodeJS it's enough to stop the debugger.
+
+Note that you can create multiple configurations for different functions / group of functions. You can pass these as a comma separated list to the `--functions` flag.
 
 #### Supported runtimes
-* NodeJs (JavaScript and TypeScript)
-* .NET 6.0 (C#) - See .NET specific documentation [here](./docs/samp-local-dotnet.md)
+* NodeJS (JavaScript and TypeScript)
+* .NET (only tested on v6.0)
+* Python
+
+Java and Go are not supported at this time, but will be added in the future.
+
+#### Supported IDEs
+* VsCode (All runtimes)
+* Visual Studio (.NET only)
+* Rider (.NET only)
+* PyCharm (Python only)
+
+|                    | NodeJS (JS/TS) | .NET | Python |
+|--------------------|----------------|------|--------|
+| VS Code            | ✓              | ✓    | ✓      |
+| Visual Studio      |                | ✓    |        |
+| JetBrains Rider    |                | ✓    |        |
+| JetBrains PyCharm  |                |      | ✓      |
+| JetBrains WebStorm | ✓              |      |        |
 
 #### How does it work?
 The tool temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). The functions are automatically restored when you exit the debugging session with the values in your processed CloudFormation tempate. The tool also sets the MemorySize to 128MB and Timeout to 60 seconds to avoid timeouts during debugging as well as saving cost.

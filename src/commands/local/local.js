@@ -153,11 +153,12 @@ async function setupDebug(cmd) {
   let stack = cmd.stackName || targetConfig.stack_name;
   let region = cmd.region || targetConfig.region;
   let profile = cmd.profile || targetConfig.profile;
-
+  let selectedFunctionsCsv = cmd.functions || targetConfig.selected_functions;
+  let construct;
   if (env.iac === "cdk") {
     const constructs = findConstructs();
     constructs.push("Enter manually");
-    let construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
+    construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
     if (construct === "Enter manually") {
       construct = await inputUtil.text("Enter which stack construct do you want to debug?");
     }
@@ -219,8 +220,8 @@ async function setupDebug(cmd) {
     const selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
-
-    args.push("--functions", selectedFunctions.join(","));
+    selectedFunctionsCsv = selectedFunctions.join(",")
+    args.push("--functions", selectedFunctionsCsv);
   }
 
   const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
@@ -238,7 +239,7 @@ async function setupDebug(cmd) {
     return;
   }
   try {
-    await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
+    await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args, { region, profile, stack, selectedFunctionsCsv, construct  });
   } catch (e) {
     console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
     process.exit(1);

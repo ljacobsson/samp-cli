@@ -20,8 +20,7 @@ Local debugging should work in any IDE, however `samp local --debug` automates l
 $ npm install -g samp-cli
 ```
 2. cd to your .NET Lambda project root (make sure it has been deployed and that you're targeting a test environment. *Never* run this against a production environment!)
-3. Run `samp local --debug` and follow the prompts. This will create the required IDE specific configuration files.
-4. Run `samp local` and leave it running. (see `samp local --help` for all options)
+3. Run `samp local --debug` and follow the prompts. This will create the required IDE specific configuration files. Leave the process running.
 5. Hit F5 (or start debugging via the dropdown menu)
 
 When you're done debugging, kill the `samp local` process with Ctrl+C (⌘+C on Mac) and you functions will be restored to run in the cloud again.
