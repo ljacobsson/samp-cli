@@ -43,7 +43,7 @@ async function run(initialised, cmd) {
 
 function print(data) {
   if (!process.env.muteParentOutput) {
-    console.error("[event router] " + data.toString().replace(/\n$/, ''));
+    console.error("[SAMP] " + data.toString().replace(/\n$/, ''));
   }
 }
 
