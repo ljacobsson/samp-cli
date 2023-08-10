@@ -58,7 +58,7 @@ if (process.argv.length > 3) {
   const stack = JSON.parse(process.argv[3]);
   const functionSources = JSON.parse(process.argv[4]);
   routeEvent(obj, stack, functionSources).then((result) => {
-    if (!result.skipResponse) {
+    if (!result?.skipResponse) {
       const response = typeof result === "string" ? result : JSON.stringify(result, null, 2);
       process.send(response || "");
     }
