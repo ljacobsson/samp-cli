@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="[SAMP] #NAME#" type="NodeJSConfigurationType" application-parameters="#ARGS#" path-to-node="#NODE_PATH#" nameIsGenerated="true" path-to-js-file="#SAMP_HOME#" working-dir="$PROJECT_DIR$">
+    <envs>
+      <env name="muteParentOutput" value="true" />
+    </envs>
+    <method v="2" />
+  </configuration>
+</component>
