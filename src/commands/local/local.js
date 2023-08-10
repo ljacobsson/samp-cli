@@ -38,10 +38,15 @@ async function run(cmd) {
 
   if (cmd.debug) {
     await setupDebug(cmd);
-    return;
-  }
-
-  else if (cmd.functions && cmd.functions !== "ALL") {
+    if (env.iac === "cdk") {
+      process.exit(0);
+    }
+  } else if (env.iac === "cdk" && (!cmd.stackName || !cmd.construct)) {
+    {
+      console.log("CDK usage: samp local --stack-name <stack-name> --construct <construct-name>");
+      process.exit(0);
+    }
+  } else if (cmd.functions && cmd.functions !== "ALL") {
     cmd.functions = cmd.functions.split(",").map(f => f.trim());
     process.env.includeFunctions = cmd.functions;
   }
@@ -54,8 +59,8 @@ async function run(cmd) {
     initialised = setupSAM_TS(initialised);
   } else if (env.iac === "sam" && env.functionLanguage == "js") {
     setupSAM_JS();
-  } else  {
-    await require(`./runtime-support/${env.functionLanguage}/iac-support/${env.iac}`).setup(cmd);
+  } else {
+    await require(`./runtime-support/${env.functionLanguage}/iac-support/${env.iac}`).setup(initialised, cmd);
   }
 
   // catch ctrl+c event and exit normally
@@ -193,7 +198,7 @@ async function setupDebug(cmd) {
   }
 
   const functions = [];
-  let name = "Debug Lambda functions"
+  let name = "[SAMP] Debug Lambda functions"
   if (env.isNodeJS) {
 
     const cloudFormation = new CloudFormationClient({ credentials, region });
@@ -219,7 +224,14 @@ async function setupDebug(cmd) {
   }
 
   const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
-  let ide = cmd.ide || await inputUtil.autocomplete("Which IDE do you use?", ["VsCode", "Rider", "VisualStudio", "Other"]);
+  if (!cmd.ide) {
+    const isVsCode = process.env.TERM_PROGRAM === "vscode";
+    const isJetBrains = process.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
+    if (isVsCode) cmd.ide = "vscode";
+    if (isJetBrains) cmd.ide = "jetbrains";
+  }
+
+  let ide = cmd.ide || await inputUtil.autocomplete("Which IDE do you use?", [{ name: "VsCode", value: "vscode" }, { name: "Rider", value: "jetbrains" }, { name: "VisualStudio", value: "visualstudio" }, "Other"]);
   ide = ide.toLowerCase();
   if (ide === "other") {
     console.log("Can't create debug config for other IDEs yet. Please create the launch config manually.");
@@ -227,7 +239,7 @@ async function setupDebug(cmd) {
   }
   try {
     await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args);
-  } catch(e) {
+  } catch (e) {
     console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
     process.exit(1);
   }
@@ -306,8 +318,6 @@ async function mergePackageJsons() {
 
   const outputPath = path.resolve('package.json');
   fs.writeFileSync(outputPath, JSON.stringify(mergedPackageJson, null, 2));
-
-  console.log(`Merged dependencies written to ${outputPath}`);
 }
 
 module.exports = {

@@ -135,8 +135,6 @@ if (!fs.existsSync(".lambda-debug")) {
     credentials: credentials
   });
 
-  console.log(`Loading necessary resources...`);
-
   const stackName = targetConfig.stack_name;
 
   template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());

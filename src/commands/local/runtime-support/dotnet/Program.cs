@@ -52,7 +52,6 @@ internal class Program
     static void InvokeFunctionThread(object? data)
     {
       var e = (FileSystemEventArgs?)data;
-      Console.WriteLine($"New file created: {e?.Name} in {e?.FullPath}");
       string[]? split = null;
       dynamic? request = null;
 

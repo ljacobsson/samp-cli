@@ -3,7 +3,7 @@ const path = require('path');
 const { exec } = require('child_process');
 const { findSAMTemplateFile, parse } = require('../../../../../shared/parser');
 
-async function setup() {
+async function setup(initialised, cmd) {
   const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
   const template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
 
@@ -28,11 +28,11 @@ async function setup() {
   csproj = csproj.replace("<!-- Projects -->", "");
   fs.writeFileSync(`.samp-out/dotnet.csproj`, csproj);
 
-  await run();
+  await run(initialised, cmd);
 }
 
 
-async function run(initialised) {
+async function run(initialised, cmd) {
   try {
     //process.env.outDir = ".samp-out";
     await copyAppsettings();
@@ -46,6 +46,13 @@ async function run(initialised) {
         const childProcess = exec(`node ${__dirname}../../../../runner.js run`, {});
         childProcess.stdout.on('data', (data) => print(data));
         childProcess.stderr.on('data', (data) => print(data));
+        if (!cmd.debug) {
+          const pythonProcess = exec(`dotnet run`, {cwd: `${process.cwd()}/.samp-out`});
+          pythonProcess.stderr.on('data', (data) => print(data));
+          pythonProcess.stdout.on('data', (data) => print(data));
+        } else {
+          console.log("You can now select '[SAMP] Debug Lambda functions' and start debugging");
+        }
       }
     });
     return initialised;

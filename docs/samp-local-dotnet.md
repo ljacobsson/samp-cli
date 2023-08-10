@@ -12,6 +12,7 @@ Local debugging should work in any IDE, however `samp local --debug` automates l
 * VS Code
 * Visual Studio
 * JetBrains Rider
+* JetBrains PyCharm
 
 ### Get started
 1. Install `samp-cli`:

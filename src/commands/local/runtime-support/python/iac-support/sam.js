@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
-async function setup() {
-  await run();
+async function setup(initialised, cmd) {
+  await run(initialised, cmd);
 }
 
-async function run(initialised) {
+async function run(initialised, cmd) {
   try {
     if (!fs.existsSync('.samp-out')) {
       fs.mkdirSync('.samp-out');
@@ -19,14 +19,22 @@ async function run(initialised) {
     fs.cpSync(`${__dirname}/../../../runtime-support/python`, `.samp-out/`, { recursive: true });
 
     const pythonProcess = exec(`pip install -r ${process.cwd()}/.samp-out/requirements.txt -t ${process.cwd()}/.samp-out`, {});
+    console.log("Installing dependencies...");
     pythonProcess.stderr.on('data', (data) => print(data));
-    pythonProcess.stdout.on('data', (data) => print(data));
+    //pythonProcess.stdout.on('data', (data) => print(data));
     pythonProcess.on('exit', (code) => {
       initialised = true;
       const childProcess = exec(`node ${__dirname}../../../../runner.js run`, {});
       childProcess.stdout.on('data', (data) => print(data));
       childProcess.stderr.on('data', (data) => print(data));
-  });
+      if (!cmd.debug) {
+        const pythonProcess = exec(`${process.env.SAMP_PYTHON_EXECUTABLE || 'python'} entrypoint.py`, { cwd: `${process.cwd()}/.samp-out` });
+        pythonProcess.stderr.on('data', (data) => print(data));
+        pythonProcess.stdout.on('data', (data) => print(data));
+      } else {
+        console.log("You can now select '[SAMP] Debug Lambda functions' and start debugging");
+      }
+    });
     return initialised;
   } catch (error) {
     console.log(error);
@@ -35,7 +43,7 @@ async function run(initialised) {
 
 function print(data) {
   if (!process.env.muteParentOutput) {
-    console.error(data.toString().replace(/\n$/, ''));
+    console.error("[event router] " + data.toString().replace(/\n$/, ''));
   }
 }
 
@@ -48,7 +56,6 @@ function mergeRequirementFiles(dirPath) {
       .join('\n');
 
     fs.writeFileSync(outputFilePath, mergedContent);
-    console.log(`Merged ${filePaths.length} files into ${outputFilePath}`);
   };
 
   const gatherFilePaths = (dir) => {
@@ -74,7 +81,6 @@ function mergeRequirementFiles(dirPath) {
 
   if (requirementFilePaths.length > 0) {
     mergeContents(requirementFilePaths, outputFile);
-    console.log(`Merged ${requirementFilePaths.length} requirements.txt files into ${outputFile}`);
   } else {
     console.log('No requirements.txt files found.');
   }
@@ -85,12 +91,11 @@ function removeDuplicatesFromFile(filePath) {
 
   const lines = fs.readFileSync(filePath, 'utf-8').split('\n');
   let uniqueLines = [...new Set(lines)]; // Use a Set to remove duplicates
-  uniqueLines= uniqueLines.filter(line => !line.startsWith('pytest'));
+  uniqueLines = uniqueLines.filter(line => !line.startsWith('pytest'));
   uniqueLines.push('watchdog');
   const uniqueContent = uniqueLines.join('\n');
   fs.writeFileSync(outputFile, uniqueContent);
   fs.unlinkSync(filePath);
-  console.log(`Removed duplicates from ${filePath} and saved to ${outputFile}`);
 }
 
 

@@ -12,7 +12,6 @@ def handle_created_file(event):
         return
 
     created_file_path = event.src_path
-    print(f"New file created: {created_file_path}")
 
     try:
         with open(created_file_path, 'r') as file:
@@ -84,7 +83,7 @@ def setup_file_listener():
     observer.start()
 
     try:
-        print(f"Watching for created files in '{folder_to_watch}'...")
+        print(f"Local event router running...")
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
