@@ -15,17 +15,18 @@ program.version(package.version, "-v, --vers", "output the current version");
 
 (async () => {
   try {
-    const latestVersion = await axios.get("https://api.github.com/repos/ljacobsson/samp-cli/releases/latest", { timeout: 1000 })
+    const now = new Date();
+    const latestVersion = await axios.get("https://api.github.com/repos/ljacobsson/samp-cli/releases/latest", { timeout: 300 })
     if (latestVersion.data.tag_name !== package.version) {
-      console.log(`Update available: ${latestVersion.data.tag_name}. Run "npm i -g samp-cli" to update.`);
+      console.log(`\nUpdate available: ${latestVersion.data.tag_name}. You are using ${package.version}.\nRun "npm i -g samp-cli" to update.\n`);
     }
-
   } catch (error) {
+  } finally {
+    program.parse(process.argv);
   }
 })();
 
 
-program.parse(process.argv);
 if (process.argv.length < 3) {
   program.help();
 }
