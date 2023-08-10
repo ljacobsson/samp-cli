@@ -129,7 +129,7 @@ The `--force-restore` flag is useful if you want to restore the original Lambda 
 *Big thanks to [Jason Wadsworth](https://twitter.com/quizout) for all the early feedback on this feature <3*
 
 #### How to debug
-1. Create a launch configuration and shutdown task (VS Code / NodeJS only)
+1. Create a launch configuration (and shutdown task if you're on VS Code using NodeJS). This command will automate it for you:
 ```
 sam local --debug
 ```
