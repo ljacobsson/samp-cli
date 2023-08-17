@@ -72,14 +72,18 @@ async function run(cmd) {
     if (typeof cookiecutter[key] !== "string") {
       continue;
     }
-    cookiecutter[key] = await inputUtil.text(
-      capitalizeFirstLetter(key.replaceAll("_", " ")),
-      nunjucks.renderString(cookiecutter[key], cookiecutter) ||
+
+    try {
+      cookiecutter[key] = await inputUtil.text(
+        capitalizeFirstLetter(key.replaceAll("_", " ")),
+        nunjucks.renderString(cookiecutter[key], cookiecutter) ||
         nunjucks.renderString(
           cookiecutter[key].replace("cookiecutter_", ""),
           cookiecutter
         )
-    );
+      );
+    } catch (e) {
+    }
   }
 
   for (const key of Object.keys(cookiecutter)) {
