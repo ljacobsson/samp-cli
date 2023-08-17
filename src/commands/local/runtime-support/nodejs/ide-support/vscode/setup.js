@@ -5,6 +5,7 @@ const runtimeEnvFinder = require('../../../../runtime-env-finder');
 
 const pwd = process.cwd();
 function copyConfig(name, args) {
+  let env = runtimeEnvFinder.determineRuntime();
   let launchJson;
   if (fs.existsSync(`${pwd}/.vscode/launch.json`)) {
     let fileContent = fs.readFileSync(`${pwd}/.vscode/launch.json`, "utf8");
@@ -19,7 +20,12 @@ function copyConfig(name, args) {
   const taskConfig = require(`${__dirname}/tasks.json`);
 
   launchConfig.configurations[0].name = name;
-  launchConfig.configurations[0].args = args;
+  launchConfig.configurations[0].args = args;  
+  if (env.functionLanguage === "ts") {
+    launchConfig.configurations[0].outFiles = [
+      "${workspaceFolder}/.samp-out/**/*.js"
+    ]
+  }
 
   if (!launchJson.configurations.find(c => c.name === name)) {
   launchJson.configurations.push(launchConfig.configurations[0]);

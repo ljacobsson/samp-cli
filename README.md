@@ -277,7 +277,7 @@ Lets you quickly build IAM polices, find SAM policy templates or generate SAM Co
 ```
 Usage: samp policy|p [options]
 
-Opens a wizard thet help you to create and attach a new IAM policy to a resource in your template
+Opens a wizard that helps you to create and attach a new IAM policy to a resource in your template
 
 Options:
   -t, --template <filename>         Template file name (default: "template.yaml")

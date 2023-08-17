@@ -37,19 +37,19 @@ async function run(initialised, cmd) {
     //process.env.outDir = ".samp-out";
     await copyAppsettings();
 
-    const dotnetProcess = exec(`dotnet build .samp-out/dotnet.csproj`, {});
+    const dotnetProcess = exec(`dotnet watch --project dotnet.csproj`, {cwd: `.samp-out`});
     dotnetProcess.stderr.on('data', (data) => print(data));
     dotnetProcess.stdout.on('data', (data) => {
       console.log("dotnet: ", data.toString().replace(/\n$/, ''));
-      if (data.toString().includes("Time Elapsed") && !initialised) {
+      if (data.toString().includes("dotnet watch 🚀 Started") && !initialised) {
         initialised = true;
         const childProcess = exec(`node ${__dirname}../../../../runner.js run`, {});
         childProcess.stdout.on('data', (data) => print(data));
         childProcess.stderr.on('data', (data) => print(data));
         if (!cmd.debug) {
-          const pythonProcess = exec(`dotnet run`, {cwd: `${process.cwd()}/.samp-out`});
-          pythonProcess.stderr.on('data', (data) => print(data));
-          pythonProcess.stdout.on('data', (data) => print(data));
+          const runProcess = exec(`dotnet run`, {cwd: `${process.cwd()}/.samp-out`});
+          runProcess.stderr.on('data', (data) => print(data));
+          runProcess.stdout.on('data', (data) => print(data));
         } else {
           console.log("You can now select '[SAMP] Debug Lambda functions' and start debugging");
         }

@@ -4,7 +4,7 @@ const iamPolicies = require("@mhlabs/iam-policies-cli/src/input-wizard")
 program
   .command("policy")
   .alias("p")
-  .description("Opens a wizard thet help you to create and attach a new IAM policy to a resource in your template")
+  .description("Opens a wizard that helps you create and attach a new IAM policy to a resource in your template")
   .option(
     "-t, --template <filename>",
     "Template file name",

@@ -119,6 +119,7 @@ internal class Program
           Console.WriteLine("Method not found.");
           return;
         }
+        // do error handling!!!
         var response = methodInfo.Invoke(instance, parameterList.ToArray());
         var responsesDir = e?.FullPath.Replace("samp-requests", "samp-responses");
 

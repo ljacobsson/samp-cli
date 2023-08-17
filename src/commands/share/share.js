@@ -98,7 +98,7 @@ async function run(cmd) {
             template.Resources[resource] || sharedTemplate.Resources[resource];
         const props = resourceObj.Properties;
         const runtime = runtimes.filter(
-            (p) => p.name === (props.Runtime || template.Globals.Function.Runtime)
+            (p) => p.name === (props.Runtime || template.Globals?.Function?.Runtime)
         )[0];
         if (
             resourceObj.Type === "AWS::Serverless::Function" &&
@@ -229,9 +229,8 @@ async function run(cmd) {
     }
 }
 
-async function pushCode(file, relativeFilePath, repo, name, language) {
+async function pushCode(file, relativeFilePath, repo, name, language = "") {
     const code = fs.readFileSync(file).toString();
-
     await githubUtil.putContent(
         repo.owner,
         repo.repo,

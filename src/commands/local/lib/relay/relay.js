@@ -91,7 +91,7 @@ function publishEvent(event, context) {
 }
 
 function publish(payload, sessionId) {
-  client.subscribe(`lambda-debug/callback/${config.mac}/${sessionId}`);
-  client.publish('lambda-debug/event/' + config.mac, payload);
+  client.subscribe(`lambda-debug/callback/${config.uuid}/${sessionId}`);
+  client.publish('lambda-debug/event/' + config.uuid, payload);
 }
 

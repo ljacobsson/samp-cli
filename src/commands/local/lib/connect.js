@@ -16,17 +16,31 @@ import { fork, spawnSync } from 'child_process';
 import samConfigParser from '../../../shared/samConfigParser.js';
 import { locateHandler } from "./handler-finder.js";
 import { findSAMTemplateFile, parse } from "../../../shared/parser.js";
+import { v4 as uuidv4 } from "uuid";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const mac = getMac();
+
+
+let uuid;
+if (fs.existsSync(`${homedir()}/.lambda-debug/uuid`)) {
+  uuid = fs.readFileSync(`${homedir()}/.lambda-debug/uuid`).toString();
+} else {
+  uuid = uuidv4();
+  try {
+    fs.mkdirSync(`${homedir()}/.lambda-debug`, { recursive: true });
+  } catch (e) {
+  }
+  fs.writeFileSync(`${homedir()}/.lambda-debug/uuid`, uuid);
+}
+
 let targetConfig = {};
 if (fs.existsSync(`samconfig.toml`)) {
   targetConfig = samConfigParser.parse();
 }
 targetConfig = {
-  stack_name: targetConfig.stack_name || process.env.SAMP_STACKNAME,
-  region: targetConfig.region || process.env.SAMP_REGION,
-  profile: targetConfig.profile || process.env.SAMP_PROFILE
+  stack_name: valueOrNull(process.env.SAMP_STACKNAME) || targetConfig.stack_name,
+  region: valueOrNull(process.env.SAMP_REGION) || targetConfig.region,
+  profile: valueOrNull(process.env.SAMP_PROFILE) || targetConfig.profile
 }
 console.log(`Using profile: ${targetConfig.profile || 'default'}`);
 
@@ -165,7 +179,7 @@ if (!fs.existsSync(".lambda-debug")) {
   });
   if (!fs.existsSync(zipFilePath)) {
     console.log(`Creating Lambda artifact zip`);
-    fs.writeFileSync(path.join(__dirname, 'relay', 'config.json'), JSON.stringify({ mac: mac, endpoint: endpoint }));
+    fs.writeFileSync(path.join(__dirname, 'relay', 'config.json'), JSON.stringify({ uuid, endpoint: endpoint }));
     // install npm package sin relay folder
     const npm = os.platform() === 'win32' ? 'npm.cmd' : 'npm';
     console.log(`Installing npm packages in relay lambda function folder`);
@@ -214,6 +228,7 @@ const functionSources = functions.map(key => { return { uri: template.Resources[
       baseDir = process.env.outDir + "/" + obj.uri;
     }
   }
+
   const { module, handlerMethod, runtime } = locateHandler(template, obj, baseDir);
   map[obj.name] = {
     module,
@@ -253,7 +268,7 @@ client.on('error', function (err) {
 client.on('connect', async function () {
   console.log('Ready for requests...')
   fs.writeFileSync(".lambda-debug", JSON.stringify({ stack, endpoint, certData, functions, template, envConfig: targetConfig, accountId }));
-  client.subscribe('lambda-debug/event/' + mac);
+  client.subscribe('lambda-debug/event/' + uuid);
 });
 
 const eventQueue = {};
@@ -277,7 +292,7 @@ client.on('message', async function (topic, message) {
 
   frk.on('message', (result) => {
     console.log(`Result: ${result}`);
-    client.publish(`lambda-debug/callback/${mac}/${obj.sessionId}`, result);
+    client.publish(`lambda-debug/callback/${uuid}/${obj.sessionId}`, result);
   });
 
   //  
@@ -296,7 +311,7 @@ if (!targetConfig.childProcess) {
 }
 process.on("exit", async (x) => {
   // delete certificates
-  client.publish('lambda-debug/callback/' + mac, JSON.stringify({ event: 'lambda-debug-exit', context: {} }));
+  client.publish('lambda-debug/callback/' + uuid, JSON.stringify({ event: 'lambda-debug-exit', context: {} }));
   client.end();
   await iotClient.send(new DetachPolicyCommand({
     policyName: policyName,
@@ -365,3 +380,9 @@ function debugInProgress() {
   return fs.existsSync(".lambda-debug");
 }
 
+function valueOrNull(str) {
+  if (!str) {
+    return null;
+  }
+  return str.length > 0 ? str : null;
+}

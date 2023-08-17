@@ -10,7 +10,9 @@ function copyConfig(name) {
   } catch (error) {
   }
 
-  launchSettings["Debug Lambda functions"] = {
+  launchSettings.profiles = launchSettings.profiles || {};
+
+  launchSettings.profiles[name] = {
     "commandName": "Executable",
     "executablePath": "$(SolutionDir).samp-out\\bin\\Debug\\net6.0\\dotnet.exe",
     "workingDirectory": "$(SolutionDir).samp-out",

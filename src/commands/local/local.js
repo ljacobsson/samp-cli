@@ -12,10 +12,10 @@ const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('./runtime-env-finder');
 let env;
 function setEnvVars(cmd) {
-  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || "default";
-  process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION;
-  process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || process.env.stackName;
-  process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH;
+  process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || '';
+  process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
+  process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || '';
+  process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH || '';
 }
 
 async function run(cmd) {
@@ -38,7 +38,7 @@ async function run(cmd) {
 
   if (cmd.debug) {
     await setupDebug(cmd);
-    if (env.iac === "cdk") {
+    if (env.isNodeJS) {
       process.exit(0);
     }
   } else if (env.iac === "cdk" && (!cmd.stackName || !cmd.construct)) {
