@@ -13,5 +13,5 @@ internal class LambdaContext : ILambdaContext
   public string LogGroupName { get; set; }
   public string LogStreamName { get; set; }
   public int MemoryLimitInMB { get; set; }
-  public TimeSpan RemainingTime { get; set; }
+  public TimeSpan RemainingTime { get; set; } = TimeSpan.MaxValue;
 }

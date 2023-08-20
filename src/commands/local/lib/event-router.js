@@ -15,37 +15,33 @@ export async function routeEvent(obj, stack, functionSources) {
       return { error: "Could not find function in stack", skipResponse: true };
     }
 
+    // write to disk
+    if (!fs.existsSync(".samp-out")) fs.mkdirSync(".samp-out");
+    if (!fs.existsSync(".samp-out/samp-requests")) fs.mkdirSync(".samp-out/samp-requests");
+    if (!fs.existsSync(".samp-out/samp-responses")) fs.mkdirSync(".samp-out/samp-responses");
+    fs.writeFileSync(".samp-out/samp-requests/" + obj.context.awsRequestId, JSON.stringify({ func: functionSources[logicalId].handler, module: functionSources[logicalId].module, obj, logicalId }, null, 2));
     if (functionSources[logicalId].runtime.startsWith("nodejs")) {
       const modulePath = functionSources[logicalId].module;
       const module = await import(modulePath);
       return await module[functionSources[logicalId].handler](event, context);
     } else {
-      // write to disk
-      if (!fs.existsSync(".samp-out")) fs.mkdirSync(".samp-out");
-      if (!fs.existsSync(".samp-out/samp-requests")) fs.mkdirSync(".samp-out/samp-requests");
-      if (!fs.existsSync(".samp-out/samp-responses")) fs.mkdirSync(".samp-out/samp-responses");
-      fs.writeFileSync(".samp-out/samp-requests/" + obj.context.awsRequestId, JSON.stringify({ func: functionSources[logicalId].handler, module: functionSources[logicalId].module, obj }, null, 2));
       // await file to be written to .samp-out/responses
-        
+
       return await new Promise((resolve, reject) => {
         const filePath = `.samp-out/samp-responses/${context.awsRequestId}`;
 
         const watcher = fs.watch(".samp-out/samp-responses", (eventType, filename) => {
           if (filename === context.awsRequestId) {
-            watcher.close(); // Close the watcher to stop monitoring changes
-            fs.readFile(filePath, "utf-8", (err, data) => {
-              if (err) {
-                reject(err);
-              } else {
-                resolve(data);
-              }
-            });
+            watcher.removeAllListeners();
+            watcher.close();
+            try {
+              const response = fs.readFileSync(filePath, "utf-8");
+              resolve(response);
+            } catch (e) {
+              reject(e);
+            }
           }
         });
-        // setTimeout(() => {
-        //   watcher.close();
-        //   resolve("Timeout");
-        // }, 10000);
       });
     }
   } catch (error) {

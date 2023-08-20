@@ -19,6 +19,7 @@ function setEnvVars(cmd) {
 }
 
 async function run(cmd) {
+
   env = runtimeEnvFinder.determineRuntime();
   setEnvVars(cmd);
   if (cmd.mergePackageJsons) {
@@ -46,7 +47,7 @@ async function run(cmd) {
       console.log("CDK usage: samp local --stack-name <stack-name> --construct <construct-name>");
       process.exit(0);
     }
-  } else if (cmd.functions && cmd.functions !== "ALL") {
+  } else if (cmd.functions && cmd.functions !== true) {
     cmd.functions = cmd.functions.split(",").map(f => f.trim());
     process.env.includeFunctions = cmd.functions;
   }
@@ -83,7 +84,7 @@ async function run(cmd) {
 }
 
 function setupSAM_JS() {
-  const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon ${__dirname}/runner.js run`, {});
+  const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --ignore ./.samp-out/samp-requests/ ${__dirname}/runner.js run`, {});
   childProcess.stdout.on('data', (data) => print(data));
   childProcess.stderr.on('data', (data) => print(data));
 }
@@ -98,7 +99,7 @@ function setupSAM_TS(initialised) {
     console.log("tsc: ", data.toString().replace(/\n$/, ''));
     if (data.toString().includes("Watching for file changes") && !initialised) {
       initialised = true;
-      const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
+      const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --ignore ./.samp-out/samp-requests/ --watch .samp-out ${__dirname}/runner.js run`, {});
       childProcess.stdout.on('data', (data) => print(data));
       childProcess.stderr.on('data', (data) => print(data));
     }
@@ -125,7 +126,7 @@ function setupCDK_TS(initialised, cmd) {
       });
       cdkWrapper.on('exit', (code) => {
         initialised = true;
-        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --watch .samp-out ${__dirname}/runner.js run`, {});
+        const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --ignore ./.samp-out/samp-requests/ --watch .samp-out ${__dirname}/runner.js run`, {});
         childProcess.stdout.on('data', (data) => print(data));
         childProcess.stderr.on('data', (data) => {
           print(data);
@@ -199,11 +200,12 @@ async function setupDebug(cmd) {
   }
 
   const functions = [];
+  let selectedFunctions = selectedFunctionsCsv;
   let name = "[SAMP] Debug Lambda functions"
-  if (env.isNodeJS) {
+  let functionNames;
+  const cloudFormation = new CloudFormationClient({ credentials, region });
 
-    const cloudFormation = new CloudFormationClient({ credentials, region });
-
+  if (cmd.functions === true || env.isNodeJS) {
     let token;
     do {
       try {
@@ -215,9 +217,12 @@ async function setupDebug(cmd) {
         process.exit(1);
       }
     } while (token);
+    functionNames = functions.map(f => f.LogicalResourceId);
+    selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
+    process.env.includeFunctions = selectedFunctions;
 
-    const functionNames = functions.map(f => f.LogicalResourceId);
-    const selectedFunctions = await inputUtil.checkbox("Select functions to debug", functionNames);
+  }
+  if (env.isNodeJS) {
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
     selectedFunctionsCsv = selectedFunctions.join(",")
@@ -239,7 +244,7 @@ async function setupDebug(cmd) {
     return;
   }
   try {
-    await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args, { region, profile, stack, selectedFunctionsCsv, construct  });
+    await require(`./runtime-support/${runtime}/ide-support/${ide}/setup.js`).copyConfig(name, args, { region, profile, stack, selectedFunctionsCsv, construct });
   } catch (e) {
     console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
     process.exit(1);

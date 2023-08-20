@@ -2,14 +2,41 @@ const { LambdaClient, InvokeCommand } = require('@aws-sdk/client-lambda');
 const { SchemasClient, DescribeSchemaCommand, UpdateSchemaCommand, CreateSchemaCommand, CreateRegistryCommand } = require('@aws-sdk/client-schemas');
 const { fromSSO } = require("@aws-sdk/credential-provider-sso");
 const fs = require('fs');
+const path = require('path');
 const inputUtil = require('../../shared/inputUtil');
 
-async function invoke(cmd, resourceName) {
+async function invoke(cmd, resource) {
+  const resourceName = resource.PhysicalResourceId;
   const lambdaClient = new LambdaClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
   const schemasClient = new SchemasClient({ region: cmd.region, credentials: await fromSSO({ profile: cmd.profile }) });
+  let files = [];
   if (!cmd.payload) {
-    const payloadSource = await inputUtil.list("Select a payload source", ["Empty JSON", "Local JSON file", "Shared test event", "Input JSON"]);
-    if (payloadSource === "Empty JSON") {
+    const sources = ["Empty JSON", "Local JSON file", "Shared test event", "Input JSON"];
+    const requestsPath = `${process.cwd()}/.samp-out/samp-requests`;
+    if (fs.existsSync(requestsPath)) {
+      files = getRequestFiles(requestsPath, resourceName);
+      if (files.length > 0) {
+        sources.unshift("Recent request (samp local)");
+      }
+    }
+    const payloadSource = await inputUtil.list("Select a payload source", sources);
+    if (payloadSource === "Recent request (samp local)") {
+      const file = await inputUtil.autocomplete("Select a recent request", files.map(p => {
+        let stringifiedEvent;
+        if (p.event instanceof Object) {
+          stringifiedEvent = JSON.stringify(p.event);
+        } else {
+          stringifiedEvent = p.event;
+        }
+        
+        if (stringifiedEvent.length > 64) {
+          stringifiedEvent = stringifiedEvent.substring(0, 50) + "...";
+        }
+        return { name: `[${p.createdAt.toLocaleTimeString()}] ${stringifiedEvent}`, value: p.name }
+      }));
+      const obj = fs.readFileSync(`${process.cwd()}/.samp-out/samp-requests/${file}`, "utf8");
+      cmd.payload = JSON.stringify(JSON.parse(obj).obj.event);
+    } else if (payloadSource === "Empty JSON") {
       cmd.payload = "{}";
     } else if (payloadSource === "Local JSON file") {
       cmd.payload = await inputUtil.file("Select file(s) to use as payload", "json");
@@ -107,6 +134,33 @@ async function invoke(cmd, resourceName) {
     }
   } else {
     console.log("Invalid JSON, please try again");
+  }
+}
+
+function getRequestFiles(folderPath, resourceName) {
+  try {
+    const files = fs.readdirSync(folderPath, { withFileTypes: true });
+
+    const fileDetails = files
+      .filter(file => {
+        if (!file.isFile()) {
+          return false;
+        }
+        const fileContent = JSON.parse(fs.readFileSync(path.join(folderPath, file.name), "utf8"));
+        return fileContent.obj.context.functionName === resourceName;
+      }
+      )
+      .map(file => {
+        const filePath = path.join(folderPath, file.name);
+        const stats = fs.statSync(filePath);
+        const event = JSON.parse(fs.readFileSync(path.join(folderPath, file.name), "utf8")).obj.event;
+        return { name: file.name, createdAt: stats.ctime, event };
+      });
+
+    const sortedFiles = fileDetails.sort((a, b) => b.createdAt - a.createdAt);
+    return sortedFiles;
+  } catch (err) {
+    console.error('Error reading folder:', err);
   }
 }
 

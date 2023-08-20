@@ -95,7 +95,7 @@ async function run(cmd) {
     await stepFunctionsInvoker.invoke(cmd, resource.PhysicalResourceId);
   }
   else {
-    await lambdaInvoker.invoke(cmd, resource.PhysicalResourceId);
+    await lambdaInvoker.invoke(cmd, resource);
   }
 }
 

@@ -36,18 +36,19 @@ async function run(initialised, cmd) {
   try {
     //process.env.outDir = ".samp-out";
     await copyAppsettings();
+    process.env.DOTNET_WATCH_RESTART_ON_RUDE_EDIT = "true";
 
-    const dotnetProcess = exec(`dotnet watch --project dotnet.csproj`, {cwd: `.samp-out`});
+    const dotnetProcess = exec(`dotnet build`, { cwd: `.samp-out` });
     dotnetProcess.stderr.on('data', (data) => print(data));
     dotnetProcess.stdout.on('data', (data) => {
       console.log("dotnet: ", data.toString().replace(/\n$/, ''));
-      if (data.toString().includes("dotnet watch 🚀 Started") && !initialised) {
+      if (!initialised) {
         initialised = true;
         const childProcess = exec(`node ${__dirname}../../../../runner.js run`, {});
         childProcess.stdout.on('data', (data) => print(data));
         childProcess.stderr.on('data', (data) => print(data));
         if (!cmd.debug) {
-          const runProcess = exec(`dotnet run`, {cwd: `${process.cwd()}/.samp-out`});
+          const runProcess = exec(`dotnet watch run`, { cwd: `${process.cwd()}/.samp-out` });
           runProcess.stderr.on('data', (data) => print(data));
           runProcess.stdout.on('data', (data) => print(data));
         } else {
