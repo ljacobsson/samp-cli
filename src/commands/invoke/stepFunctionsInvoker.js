@@ -29,7 +29,7 @@ async function invoke(cmd, sfnArn) {
     } else if (payloadSource === "Recent execution history") {
       try {
         const executions = await sfnClient.send(new ListExecutionsCommand({ stateMachineArn: sfnArn }));
-        const executionNames = executions.executions.map(e => {return {name: `${e.name} (${e.startDate.toISOString()}) - ${e.status}` , value: e.executionArn}});
+        const executionNames = executions.executions.map(e => { return { name: `${e.name} (${e.startDate.toISOString()}) - ${e.status}`, value: e.executionArn } });
         const executionArn = await inputUtil.autocomplete("Select an execution", executionNames);
         const execution = await sfnClient.send(new DescribeExecutionCommand({ executionArn }));
 
@@ -119,6 +119,7 @@ async function invoke(cmd, sfnArn) {
         url = `https://${cmd.region}.console.aws.amazon.com/states/home?region=${cmd.region}#/v2/executions/details/${response}`;
       }
       console.log("Started:", url);
+      return { resourceName: sfnArn, payload: cmd.payload }
     }
     catch (err) {
       console.log("Error", err);

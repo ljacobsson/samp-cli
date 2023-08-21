@@ -84,17 +84,17 @@ You can pass a variety of inputs to the function / state machine:
 * For StepFunctions, you can select to re-run the input from a recent execution from the state machine.
 
 ```
-Usage: sampat invoke|in [options]
+Usage: samp invoke|in [options]
 
 Invokes a Lambda function or a StepFunctions state machine
 
 Options:
-  -s, --stack-name [stackName]  The name of the deployed stack. Optional if a samconfig.toml file is present
-  -pl, --payload [payload]      The payload to send to the function. Could be stringified JSON,
-                                a file path to a JSON file or the name of a shared test event. Optional
-  -p, --profile [profile]       AWS profile to use. Optional (default: "default")
-  --region [region]             The AWS region to use. Falls back on AWS_REGION environment
-                                variable if not specified
+  -s, --stack-name [stackName]  The name of the deployed stack
+  -r, --resource [resource]     The resource (function name or state machine ARN) to invoke. If not specified, you will be prompted to select one
+  -pl, --payload [payload]      The payload to send to the function. Could be stringified JSON, a file path to a JSON file or the name of a shared test event
+  -l, --latest                  Invokes the latest request that was sent to the function (default: false)
+  -p, --profile [profile]       AWS profile to use (default: "default")
+  --region [region]             The AWS region to use. Falls back on AWS_REGION environment variable if not specified
   -h, --help                    display help for command
   ```
 

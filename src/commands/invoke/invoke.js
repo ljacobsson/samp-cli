@@ -10,7 +10,10 @@ const parser = require("../../shared/parser");
 const fs = require("fs");
 const ini = require('ini');
 const link2aws = require('link2aws');
+const path = require("path");
 const open = import('open');
+const os = require('os');
+
 let region;
 async function run(cmd) {
   if (fs.existsSync(".lambda-debug")) {
@@ -55,7 +58,7 @@ async function run(cmd) {
       cmd.region = params.region;
       region = params.region;
     }
-  } 
+  }
 
   let credentials;
   try {
@@ -78,24 +81,47 @@ async function run(cmd) {
     process.exit(1);
   }
   const targets = resources.StackResources.filter(r => ["AWS::Lambda::Function", "AWS::StepFunctions::StateMachine"].includes(r.ResourceType)).map(r => { return { name: `${r.LogicalResourceId} [${r.ResourceType.split("::")[1]}]`, value: r } });
-
+  if (cmd.latest) {
+    if (!fs.existsSync(path.join(os.homedir(), '.samp-cli', 'invokes', `${cmd.stackName}.json`))) {
+      console.log(`No previous invoke found for ${cmd.stackName}`);
+      process.exit(1);
+    }
+    const latest = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.samp-cli', 'invokes', `${cmd.stackName}.json`), "utf8"));
+    cmd.resource = latest.resourceName;
+    cmd.payload = latest.payload;
+  }
   if (targets.length === 0) {
     console.log("No compatible resources found in stack");
     return;
   }
   let resource;
-
-  if (targets.length === 1) {
-    resource = targets[0].value;
+  if (!cmd.resource) {
+    if (targets.length === 1) {
+      resource = targets[0].value;
+    }
+    else {
+      resource = await inputUtil.autocomplete("Select a resource", targets);
+    }
+  } else {
+    resource = targets.find(t => t.value.PhysicalResourceId === cmd.resource)?.value;
+    if (!resource) {
+      console.log(`Resource ${cmd.resource} not found in stack`);
+      process.exit(1);
+    }
   }
-  else {
-    resource = await inputUtil.autocomplete("Select a resource", targets);
-  }
+  let latest;
   if (resource.ResourceType === "AWS::StepFunctions::StateMachine") {
-    await stepFunctionsInvoker.invoke(cmd, resource.PhysicalResourceId);
+    latest = await stepFunctionsInvoker.invoke(cmd, resource.PhysicalResourceId);
   }
   else {
-    await lambdaInvoker.invoke(cmd, resource);
+    latest = await lambdaInvoker.invoke(cmd, resource);
+  }
+  if (latest) {
+    if (!fs.existsSync(path.join(os.homedir(), '.samp-cli', 'invokes'))) {
+      fs.mkdirSync(path.join(os.homedir(), '.samp-cli', 'invokes'), { recursive: true });
+    }
+
+    fs.writeFileSync(path.join(os.homedir(), '.samp-cli', 'invokes', `${cmd.stackName}.json`), JSON.stringify(latest, null, 2));
   }
 }
 

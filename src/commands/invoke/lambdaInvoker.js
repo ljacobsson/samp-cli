@@ -28,7 +28,7 @@ async function invoke(cmd, resource) {
         } else {
           stringifiedEvent = p.event;
         }
-        
+
         if (stringifiedEvent.length > 64) {
           stringifiedEvent = stringifiedEvent.substring(0, 50) + "...";
         }
@@ -128,6 +128,7 @@ async function invoke(cmd, resource) {
       } catch (e) {
         console.log("Response:", response);
       }
+      return { resourceName, payload: cmd.payload }
     }
     catch (err) {
       console.log("Error", err);
