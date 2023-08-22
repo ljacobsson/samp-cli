@@ -228,7 +228,7 @@ async function setupDebug(cmd) {
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
     selectedFunctionsCsv = selectedFunctions.join(",")
-    args.push("--functions", selectedFunctionsCsv);
+    args.push("--functions", selectedFunctionsCsv, "--profile", profile);
   }
 
   const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
