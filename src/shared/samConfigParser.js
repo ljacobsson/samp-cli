@@ -1,16 +1,20 @@
 const toml = require('toml');
 const fs = require('fs');
 const yaml = require('yaml');
-function parse() {
-  if (!fs.existsSync(`samconfig.toml`)) {
+
+function parse(samconfigFile) {
+
+  const foundSamconfigFile = findSamconfigFile(samconfigFile);
+  if (foundSamconfigFile === null){
     return {};
   }
+
   const configEnv = 'default';
   let config;
   try {
-    config = toml.parse(fs.readFileSync(`samconfig.toml`, 'utf-8'));
+    config = toml.parse(fs.readFileSync(foundSamconfigFile, 'utf-8'));
   } catch (e) {
-    config = yaml.parse(fs.readFileSync(`samconfig.yaml`, 'utf-8'));    
+    config = yaml.parse(fs.readFileSync(foundSamconfigFile, 'utf-8'));    
   }
   const envConfig = config[configEnv].deploy.parameters;
   envConfig.configEnv = process.env.configEnv || 'default';
@@ -20,6 +24,25 @@ function parse() {
   return envConfig;
 }
 
+function findSamconfigFile(samconfigFile) {
+  const defaultSamconfigFiles = ['samconfig.toml', 'samconfig.yaml', 'samconfig.yml'];
+
+  if (samconfigFile && !defaultSamconfigFiles.includes(samconfigFile)){
+    if(fs.existsSync(samconfigFile)){
+      return samconfigFile;
+    }
+    return null;
+  } else {
+    for (const file of defaultSamconfigFiles) {
+      if (fs.existsSync(file)){
+        return file;
+      }
+    }
+    return null;
+  }
+}
+
 module.exports = {
-  parse
+  parse,
+  findSamconfigFile
 }

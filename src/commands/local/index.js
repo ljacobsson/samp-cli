@@ -13,6 +13,8 @@ program
   .option("-d, --debug", "Configure debug for vscode. This only needs to be run once per project", false)
   .option("-p, --profile [profile]", "AWS profile to use")
   .option("--region [region]", "The AWS region to use. Falls back on AWS_REGION environment variable if not specified")
+  .option("--template-file [templateFile]", "If you wish to provide a custom named template file. Otherwise samp will look for template.|yaml|yml|json")
+  .option("--samconfig-file [samconfigFile]", "If you wish to provide a custom samconfig file. Default is samconfig.toml|yaml|yml")
   .action(async (cmd) => {
     cmd.construct = cmd.construct || `./lib/${cmd.stackName}.ts`;
     await local.run(cmd);

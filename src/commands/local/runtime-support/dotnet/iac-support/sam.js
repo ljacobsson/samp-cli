@@ -5,7 +5,21 @@ const { findSAMTemplateFile, parse } = require('../../../../../shared/parser');
 
 async function setup(initialised, cmd) {
   const projectReferenceTemplate = '<ProjectReference Include="..\%code_uri%.csproj" />';
-  const template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
+  let template = ""
+
+  // If custom template file is provided through the cli
+  const templateFile = process.env.SAMP_TEMPLATE_FILE
+  if (templateFile) {
+    if (fs.existsSync(templateFile)) {
+      template = parse("template", fs.readFileSync(templateFile).toString());
+    } else {
+      console.log(`The specified ${templateFile} cannot be found`);
+      return;
+    }
+  } else {
+    // If not provided then find default sam templatefile
+    template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
+  }
 
   // fetch all functions
   const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Serverless::Function");

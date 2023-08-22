@@ -33,10 +33,8 @@ if (fs.existsSync(`${homedir()}/.lambda-debug/uuid`)) {
   fs.writeFileSync(`${homedir()}/.lambda-debug/uuid`, uuid);
 }
 
-let targetConfig = {};
-if (fs.existsSync(`samconfig.toml`)) {
-  targetConfig = samConfigParser.parse();
-}
+let targetConfig = samConfigParser.parse(process.env.SAMP_SAMCONFIG_FILE);
+
 targetConfig = {
   stack_name: valueOrNull(process.env.SAMP_STACKNAME) || targetConfig.stack_name,
   region: valueOrNull(process.env.SAMP_REGION) || targetConfig.region,
@@ -151,7 +149,20 @@ if (!fs.existsSync(".lambda-debug")) {
 
   const stackName = targetConfig.stack_name;
 
-  template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
+  // If custom template file is provided through the cli
+  const templateFile = process.env.SAMP_TEMPLATE_FILE
+  if (templateFile) {
+    if (fs.existsSync(templateFile)) {
+      template = parse("template", fs.readFileSync(templateFile).toString());
+    } else {
+      console.log(`The specified ${templateFile} cannot be found`);
+      return;
+    }
+  } else {
+    // If not provided then find default sam templatefile
+    template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
+  }
+
   stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
   let token = stack.NextToken;
   if (token) {

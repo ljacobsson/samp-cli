@@ -119,6 +119,8 @@ Options:
   -d, --debug                   Configure debug for vscode. This only needs to be run once per project (default: false)
   -p, --profile [profile]       AWS profile to use
   --region [region]             The AWS region to use. Falls back on AWS_REGION environment variable if not specified
+  --template-file               If you wish to provide a custom named template file. Otherwise samp will look for template.|yaml|yml|json
+  --samconfig-file              If you wish to provide a custom samconfig file. Default is samconfig.toml|yaml|yml
   -h, --help                    display help for command
 ```
 

@@ -10,23 +10,31 @@ const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('./runtime-env-finder');
+const { languages, runtimes} = require('../../shared/enums');
 let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || '';
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
   process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || '';
   process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH || '';
+  process.env.SAMP_SAMCONFIG_FILE = cmd.samconfigFile || process.env.SAMP_SAMCONFIG_FILE || '';
+  process.env.SAMP_TEMPLATE_FILE = cmd.templateFile || process.env.SAMP_TEMPLATE_FILE || '';
 }
 
 async function run(cmd) {
+  env = runtimeEnvFinder.determineRuntime(cmd.templateFile);
 
-  env = runtimeEnvFinder.determineRuntime();
+  if (env === null) {
+    console.log("Failed to find runtime environment. Please make sure your project has a valid template file.");
+    process.exit(1);
+  }
+
   setEnvVars(cmd);
   if (cmd.mergePackageJsons) {
     await mergePackageJsons();
   }
 
-  if (!validate(env)) {
+  if (!validate(env, cmd.samconfigFile)) {
     return;
   }
 
@@ -39,29 +47,27 @@ async function run(cmd) {
 
   if (cmd.debug) {
     await setupDebug(cmd);
-    if (env.isNodeJS) {
+    if (env.runtime === runtimes.NodeJs) {
       process.exit(0);
     }
   } else if (env.iac === "cdk" && (!cmd.stackName || !cmd.construct)) {
-    {
-      console.log("CDK usage: samp local --stack-name <stack-name> --construct <construct-name>");
-      process.exit(0);
-    }
+    console.log("CDK usage: samp local --stack-name <stack-name> --construct <construct-name>");
+    process.exit(0);
   } else if (cmd.functions && cmd.functions !== true) {
     cmd.functions = cmd.functions.split(",").map(f => f.trim());
     process.env.includeFunctions = cmd.functions;
   }
 
   let initialised = false;
-  if (env.iac === "cdk" && env.functionLanguage == "ts") {
+  if (env.iac === "cdk" && env.functionLanguage === languages.TypeScript) {
     initialised = setupCDK_TS(initialised, cmd);
   }
-  else if (env.iac === "sam" && env.functionLanguage == "ts") {
+  else if (env.iac === "sam" && env.functionLanguage === languages.TypeScript) {
     initialised = setupSAM_TS(initialised);
-  } else if (env.iac === "sam" && env.functionLanguage == "js") {
+  } else if (env.iac === "sam" && env.functionLanguage === languages.JavaScript) {
     setupSAM_JS();
   } else {
-    await require(`./runtime-support/${env.functionLanguage}/iac-support/${env.iac}`).setup(initialised, cmd);
+    await require(`./runtime-support/${env.runtime}/iac-support/${env.iac}`).setup(initialised, cmd);
   }
 
   // catch ctrl+c event and exit normally
@@ -147,9 +153,15 @@ function print(data) {
 }
 
 async function setupDebug(cmd) {
-  const env = runtimeEnvFinder.determineRuntime();
+  const env = runtimeEnvFinder.determineRuntime(cmd.templateFile);
+
+  if (env === null) {
+    console.log("Failed to find template or the runtime in the template is not supported");
+    process.exit(1);
+  }
+
   let credentials;
-  let targetConfig = samConfigParser.parse();
+  let targetConfig = samConfigParser.parse(cmd.samconfigFile);
   let args = ["local"];
   let stack = cmd.stackName || targetConfig.stack_name;
   let region = cmd.region || targetConfig.region;
@@ -205,7 +217,7 @@ async function setupDebug(cmd) {
   let functionNames;
   const cloudFormation = new CloudFormationClient({ credentials, region });
 
-  if (cmd.functions === true || env.isNodeJS) {
+  if (cmd.functions === true || env.runtime === runtimes.NodeJs) {
     let token;
     do {
       try {
@@ -222,14 +234,14 @@ async function setupDebug(cmd) {
     process.env.includeFunctions = selectedFunctions;
 
   }
-  if (env.isNodeJS) {
+  if (env.runtime === runtimes.NodeJs) {
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
     selectedFunctionsCsv = selectedFunctions.join(",")
-    args.push("--functions", selectedFunctionsCsv, "--profile", profile);
+    args.push("--functions", selectedFunctionsCsv, "--profile", profile, "--samconfig-file", cmd.samconfigFile);
   }
 
-  const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
+  const runtime = env.runtime === runtimes.NodeJs ? "nodejs" : env.functionLanguage;
   if (!cmd.ide) {
     const isVsCode = process.env.TERM_PROGRAM === "vscode";
     const isJetBrains = process.env.TERMINAL_EMULATOR === "JetBrains-JediTerm";
@@ -249,7 +261,7 @@ async function setupDebug(cmd) {
     console.log(`Failed to setup debug config for ${ide} for runtime ${runtime}.`, e.message);
     process.exit(1);
   }
-  if (env.isNodeJS) {
+  if (env.runtime === runtimes.NodeJs) {
     console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
   } else {
     console.log("Debug setup complete. You can now run `samp local`, select the debug configuration from the dropdown and hit F5 to start debugging");
@@ -268,8 +280,8 @@ async function warn() {
   }
 }
 
-function validate(env) {
-  if (env.isNodeJS) {
+function validate(env, samconfigFile) {
+  if (env.runtime === runtimes.NodeJs) {
     if (!fs.existsSync("package.json")) {
       console.log("Warning - no package.json found. This command expects a package.json file to exist in the project root directory. If you use one package.json per function sub-folder, please run 'samp local --merge-package-jsons' to create a package.json file in the project root directory followed by npm install");
       return true;
@@ -284,8 +296,8 @@ function validate(env) {
     }
   }
 
-  if (!fs.existsSync("samconfig.toml") && !fs.existsSync("cdk.json")) {
-    console.log("No samconfig.toml found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
+  if (!samConfigParser.findSamconfigFile(samconfigFile) && !fs.existsSync("cdk.json")) {
+    console.log("No samconfig found. If you have a custom named samconfig, please pass it as an argument. Also, make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
     return false;
   }
 
