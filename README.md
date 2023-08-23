@@ -186,6 +186,33 @@ Options:
 
 ![Demo](images/demo-trace.gif)
 
+### samp stepfunctions
+This command consists of two sub commands: init and sync
+
+#### samp stepfunctions init
+Initiates a new StepFunctions resource and ASL file to your SAM project.
+
+#### samp stepfunctions sync
+Establishes a live sync between your ASL file(s) and their corresponding state machine in the cloud. This enables you to write ASL with a fast feedback loop without the wait time of deploying the state machine to the cloud.
+
+```
+Usage: samp stepfunctions|sfn stepfunctions [init|sync] [options]
+
+Initiates a state machine or sets up a live sync between your local ASL and the cloud
+
+Options:
+  -t, --template-file [templateFile]  Path to SAM template file (default:
+                                      "template.yaml")
+  -s, --stack-name [stackName]        [Only applicable when syncing] The name of
+                                      the deployed stack
+  -p, --profile [profile]             [Only applicable when syncing] AWS profile
+                                      to use (default: "default")
+  --region [region]                   The AWS region to use. Falls back on
+                                      AWS_REGION environment variable if not
+                                      specified
+  -h, --help                          display help for command
+```
+
 ### samp explore
 Lets you browse and explore your serverless patterns repositories. 
 
