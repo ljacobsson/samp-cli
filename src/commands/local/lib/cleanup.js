@@ -72,16 +72,18 @@ const updatePromises = functions.map(async functionName => {
         bucket = bucket.replace("${AWS::AccountId}", conf.accountId);
         bucket = bucket.replace("${AWS::Region}", conf.envConfig.region);
       }
-      const params = {
-        FunctionName: physicalId,
-        Publish: true,
-        S3Bucket: bucket,
-        S3Key: func.Properties.Code.S3Key,
-      };
+      if (func.Properties?.Code?.S3Key) {
+        const params = {
+          FunctionName: physicalId,
+          Publish: true,
+          S3Bucket: bucket,
+          S3Key: func.Properties.Code.S3Key,
+        };
 
-      await lambdaClient.send(new UpdateFunctionCodeCommand(params));
-
+        await lambdaClient.send(new UpdateFunctionCodeCommand(params));
+      }
       updated = true;
+
     } catch (error) {
       if (error.name === "TooManyRequestsException") {
         console.log("Too many requests, sleeping for 1 second");
