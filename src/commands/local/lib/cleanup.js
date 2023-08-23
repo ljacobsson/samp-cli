@@ -5,25 +5,24 @@ import ini from 'ini';
 import { fromSSO } from '@aws-sdk/credential-provider-sso';
 import { type } from 'os';
 
-console.log("Cleaning up...");
+console.log("Cleaning up...", process.env.SAMP_PROFILE);
 let configEnv = 'default';
-let functions = undefined;
 const cachePath = process.cwd() + "/.lambda-debug";
 let conf;
 if (fs.existsSync(cachePath)) {
   conf = JSON.parse(fs.readFileSync(cachePath, 'utf-8'));
   configEnv = conf.configEnv || 'default';
-  if (conf.functions) {
-    functions = conf.functions;
-  }
   fs.unlinkSync(cachePath);
+} else {
+  conf = {};
+  conf.envConfig = JSON.parse(process.env.SAMP_SAMCONFIG);
 }
 
 if (fs.existsSync(process.cwd() + "/.samp-out")) {
   console.log("Removing .samp-out directory");
   fs.rmSync(process.cwd() + "/.samp-out", { recursive: true, force: true });
 }
-if (!conf || !conf.envConfig) process.exit(0);
+
 const stackName = conf.envConfig.stack_name;
 const region = conf.envConfig.region;
 const profile = conf.envConfig.profile;
@@ -47,16 +46,19 @@ do {
 
 const template = JSON.parse(templateResponse.TemplateBody);
 
-functions = functions || Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Lambda::Function");;
-
+const functions = Object.keys(template.Resources).filter(key => template.Resources[key].Type === "AWS::Lambda::Function");;
+console.log("Restoring functions...");
+let resourceConflictCount = 0;
 const updatePromises = functions.map(async functionName => {
   let updated = false;
   do {
     try {
       const func = template.Resources[functionName];
       const physicalId = stackResources.find(resource => resource.LogicalResourceId === functionName).PhysicalResourceId;
-      console.log(`Restoring function: ${functionName}`);
-
+      validateNotIntrinsicFunction(func.Properties.Timeout, "Timeout", "number", functionName);
+      validateNotIntrinsicFunction(func.Properties.MemorySize, "MemorySize", "number", functionName);
+      validateNotIntrinsicFunction(func.Properties.Handler, "Handler", "string", functionName);
+      validateNotIntrinsicFunction(func.Properties.Runtime, "Runtime", "string", functionName);
       await lambdaClient.send(new UpdateFunctionConfigurationCommand({
         FunctionName: physicalId,
         Timeout: func.Properties.Timeout,
@@ -73,23 +75,29 @@ const updatePromises = functions.map(async functionName => {
         bucket = bucket.replace("${AWS::AccountId}", conf.accountId);
         bucket = bucket.replace("${AWS::Region}", conf.envConfig.region);
       }
-      const params = {
-        FunctionName: physicalId,
-        Publish: true,
-        S3Bucket: bucket,
-        S3Key: func.Properties.Code.S3Key,
-      };
+      if (func.Properties?.Code?.S3Key) {
+        const params = {
+          FunctionName: physicalId,
+          Publish: true,
+          S3Bucket: bucket,
+          S3Key: func.Properties.Code.S3Key,
+        };
 
-      await lambdaClient.send(new UpdateFunctionCodeCommand(params));
-
-      console.log("Restored function:", functionName);
+        await lambdaClient.send(new UpdateFunctionCodeCommand(params));
+      }
       updated = true;
+
     } catch (error) {
       if (error.name === "TooManyRequestsException") {
         console.log("Too many requests, sleeping for 1 second");
         await new Promise(resolve => setTimeout(resolve, 1000));
       } else if (error.name === "ResourceConflictException") {
-        console.log("Resource conflict, retrying");
+        resourceConflictCount++;
+        if (resourceConflictCount < 10) {
+          console.log("Resource conflict, retrying...");
+        } else {
+          console.log("Resource conflict, retrying... Hang in there - this may take a while");
+        }
         await new Promise(resolve => setTimeout(resolve, 1000));
       } else {
         throw error;
@@ -99,7 +107,14 @@ const updatePromises = functions.map(async functionName => {
 
 });
 
+function validateNotIntrinsicFunction(obj, name, expectedDataType, functionName) {
+  if (typeof obj === "object") {
+    console.log(`Tried to restore ${name} on ${functionName}, but it's set using an intrinsic function which isn't supported. Please use a ${expectedDataType} instead. You'll need to restore this function manually.`);    
+  }
+}
+
 // Wait for all promises to resolve
 await Promise.all(updatePromises);
+console.log("Finished restoring functions");
 
 

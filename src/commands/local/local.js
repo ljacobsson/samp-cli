@@ -41,6 +41,8 @@ async function run(cmd) {
   await warn();
 
   if (cmd.forceRestore) {
+    const samConfig = samConfigParser.parse();
+    process.env.SAMP_SAMCONFIG = JSON.stringify(samConfig); // pass it as an env var since it could be run in a separate process
     await runner.stop();
     return;
   }
