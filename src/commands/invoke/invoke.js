@@ -40,7 +40,7 @@ async function run(cmd) {
     }
     if (!cmd.profile) {
       console.log("Using default profile. Override by setting --profile <your profile>");
-    }
+    } 
   }
   else if (fs.existsSync("samconfig.toml")) {
     const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
@@ -70,7 +70,6 @@ async function run(cmd) {
     console.error("Missing required option: --stack-name");
     process.exit(1);
   }
-
   const cloudFormation = new CloudFormationClient({ credentials: credentials, region: cmd.region });
   let resources;
   try {
@@ -89,6 +88,7 @@ async function run(cmd) {
     const latest = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.samp-cli', 'invokes', `${cmd.stackName}.json`), "utf8"));
     cmd.resource = latest.resourceName;
     cmd.payload = latest.payload;
+    cmd.executionName = latest.name;
   }
   if (targets.length === 0) {
     console.log("No compatible resources found in stack");

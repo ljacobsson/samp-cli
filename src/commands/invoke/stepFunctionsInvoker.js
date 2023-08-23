@@ -1,4 +1,4 @@
-const { SFNClient, StartExecutionCommand, ListExecutionsCommand, DescribeExecutionCommand } = require('@aws-sdk/client-sfn');
+const { SFNClient, DescribeStateMachineForExecutionCommand, StartExecutionCommand, ListExecutionsCommand, DescribeExecutionCommand } = require('@aws-sdk/client-sfn');
 const { SchemasClient, DescribeSchemaCommand, UpdateSchemaCommand, CreateSchemaCommand, CreateRegistryCommand } = require('@aws-sdk/client-schemas');
 const { fromSSO } = require("@aws-sdk/credential-provider-sso");
 const link2aws = require('link2aws');
@@ -101,7 +101,7 @@ async function invoke(cmd, sfnArn) {
   }
 
   if (isValidJson(cmd.payload)) {
-    let executionName = await inputUtil.text("Enter a name for the execution", "test-execution");
+    let executionName = cmd.executionName || await inputUtil.text("Enter a name for the execution", "test-execution");
     executionName = executionName.replace(/[^a-zA-Z0-9-_]/g, "-");
     const params = new StartExecutionCommand({
       stateMachineArn: sfnArn,
@@ -119,7 +119,24 @@ async function invoke(cmd, sfnArn) {
         url = `https://${cmd.region}.console.aws.amazon.com/states/home?region=${cmd.region}#/v2/executions/details/${response}`;
       }
       console.log("Started:", url);
-      return { resourceName: sfnArn, payload: cmd.payload }
+      if (cmd.synchronous) {
+        let status, output;
+        do {
+          output = await sfnClient.send(new DescribeExecutionCommand({ executionArn: response }));
+          status = output.status;
+
+          await new Promise(r => setTimeout(r, 500));
+        } while (status === "RUNNING")
+
+
+        if (status === "SUCCEEDED") {
+          console.log("Execution output:", JSON.stringify(JSON.parse(output.output), null, 2));
+        } else {
+          console.log("Execution failed:", output.cause);
+        }
+      }
+
+      return { resourceName: sfnArn, payload: cmd.payload, name: executionName }
     }
     catch (err) {
       console.log("Error", err);
