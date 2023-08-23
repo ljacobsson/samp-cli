@@ -165,6 +165,27 @@ The tool temporarily replaces your function code in the cloud with a proxy funct
 
 Should you encounter any issues during the restoration of the original function code, you can use the `--force-restore` flag to restore the original code manually. Failing that, you can always redeploy your stack to restore the original code.
 
+
+### samp traces
+Lets you browse and explore the AWS X-Ray traces in your AWS account
+
+```
+Usage: samp traces|t [options]
+
+Browses and renders AWS X-Ray traces in your account
+
+Options:
+  -s, --start <start>               Start time (minutes ago) (default: 5)
+  -e, --end <end>                   End time (minutes ago) (default: 0)
+  -as, --absolute-start <start>     Start time (ISO 8601)
+  -ae, --absolute-end <end>         End time (ISO 8601)
+  -f, --filter-expression <filter>  Filter expression. Must be inside double or single quotes ("/')
+  -p, --profile <profile>           AWS profile to use (default: "default")
+  -r, --region <region>             AWS region to use
+```
+
+![Demo](images/demo-trace.gif)
+
 ### samp explore
 Lets you browse and explore your serverless patterns repositories. 
 
