@@ -206,6 +206,9 @@ async function setupDebug(cmd) {
     region = region || await inputUtil.autocomplete("What's the region of the deployed stack?", regions);
     profile = profile || await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
     args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct);
+    if (cmd.templateFile) {
+      args.push("--template-file", cmd.templateFile);
+    }
   }
 
   try {
@@ -240,7 +243,13 @@ async function setupDebug(cmd) {
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
     selectedFunctionsCsv = selectedFunctions.join(",")
-    args.push("--functions", selectedFunctionsCsv, "--profile", profile, "--samconfig-file", cmd.samconfigFile);
+    args.push("--functions", selectedFunctionsCsv, "--profile", profile);
+    if (cmd.samconfigFile) {
+      args.push("--samconfig-file", cmd.samconfigFile);
+    }
+    if (cmd.templateFile) {
+      args.push("--template-file", cmd.templateFile);
+    }
   }
 
   const runtime = env.runtime === runtimes.NodeJs ? "nodejs" : env.functionLanguage;
