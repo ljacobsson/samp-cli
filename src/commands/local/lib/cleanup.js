@@ -55,10 +55,10 @@ const updatePromises = functions.map(async functionName => {
     try {
       const func = template.Resources[functionName];
       const physicalId = stackResources.find(resource => resource.LogicalResourceId === functionName).PhysicalResourceId;
-      validateNotIntrinsicFunction(func.Properties.Timeout, "Timeout", "number");
-      validateNotIntrinsicFunction(func.Properties.MemorySize, "MemorySize", "number");
-      validateNotIntrinsicFunction(func.Properties.Handler, "Handler", "string");
-      validateNotIntrinsicFunction(func.Properties.Runtime, "Runtime", "string");
+      validateNotIntrinsicFunction(func.Properties.Timeout, "Timeout", "number", functionName);
+      validateNotIntrinsicFunction(func.Properties.MemorySize, "MemorySize", "number", functionName);
+      validateNotIntrinsicFunction(func.Properties.Handler, "Handler", "string", functionName);
+      validateNotIntrinsicFunction(func.Properties.Runtime, "Runtime", "string", functionName);
       await lambdaClient.send(new UpdateFunctionConfigurationCommand({
         FunctionName: physicalId,
         Timeout: func.Properties.Timeout,
@@ -107,10 +107,9 @@ const updatePromises = functions.map(async functionName => {
 
 });
 
-function validateNotIntrinsicFunction(obj, name, expectedDataType) {
+function validateNotIntrinsicFunction(obj, name, expectedDataType, functionName) {
   if (typeof obj === "object") {
-    console.log(`Tried to restore ${name}, but it's set using an intrinsic function which isn't supported. Please use a ${expectedDataType} instead`);
-    process.exit(1);
+    console.log(`Tried to restore ${name} on ${functionName}, but it's set using an intrinsic function which isn't supported. Please use a ${expectedDataType} instead. You'll need to restore this function manually.`);    
   }
 }
 
