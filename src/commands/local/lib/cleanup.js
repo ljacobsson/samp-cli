@@ -55,7 +55,10 @@ const updatePromises = functions.map(async functionName => {
     try {
       const func = template.Resources[functionName];
       const physicalId = stackResources.find(resource => resource.LogicalResourceId === functionName).PhysicalResourceId;
-
+      validateNotIntrinsicFunction(func.Properties.Timeout, "Timeout", "number");
+      validateNotIntrinsicFunction(func.Properties.MemorySize, "MemorySize", "number");
+      validateNotIntrinsicFunction(func.Properties.Handler, "Handler", "string");
+      validateNotIntrinsicFunction(func.Properties.Runtime, "Runtime", "string");
       await lambdaClient.send(new UpdateFunctionConfigurationCommand({
         FunctionName: physicalId,
         Timeout: func.Properties.Timeout,
@@ -103,6 +106,13 @@ const updatePromises = functions.map(async functionName => {
   } while (!updated);
 
 });
+
+function validateNotIntrinsicFunction(obj, name, expectedDataType) {
+  if (typeof obj === "object") {
+    console.log(`Tried to restore ${name}, but it's set using an intrinsic function which isn't supported. Please use a ${expectedDataType} instead`);
+    process.exit(1);
+  }
+}
 
 // Wait for all promises to resolve
 await Promise.all(updatePromises);
