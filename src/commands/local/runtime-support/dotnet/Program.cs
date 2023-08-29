@@ -162,7 +162,14 @@ internal class Program
       }
       catch (Exception ex)
       {
-        File.WriteAllText(responsesDir, ex.Message);
+        if (!ex.Message.Contains("(Object reference not set to an instance of an object.)"))
+        {
+          File.WriteAllText(responsesDir, ex.Message);
+        }
+        else
+        {
+          File.WriteAllText(responsesDir, "null");
+        }
         return;
       }
 
