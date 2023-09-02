@@ -6,11 +6,12 @@ const parser = require("../../shared/parser");
 const fs = require("fs");
 const ini = require('ini');
 const link2aws = require('link2aws');
+const samConfigParser = require('../../shared/samConfigParser');
 const open = import('open');
 let region;
 async function run(cmd) {
-  if (fs.existsSync("samconfig.toml")) {
-    const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
+  if (samConfigParser.configExists()) {
+    const config = samConfigParser.parse();
     const params = config?.default?.deploy?.parameters;
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);

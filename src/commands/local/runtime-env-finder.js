@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { parse, findSAMTemplateFile } = require('../../shared/parser');
+const samConfigParser = require('../../shared/samConfigParser');
 
 function determineRuntime() {
   const templateFile = findSAMTemplateFile(process.cwd());
@@ -41,7 +42,7 @@ function determineRuntime() {
   if (csprojFiles.length > 0) return { iac: "sam", functionLanguage: "dotnet" };;
 
   if (fs.existsSync('nuget.config')) return { iac: "sam", functionLanguage: "dotnet" };;
-  if (fs.existsSync('samconfig.toml')) return { iac: "sam", functionLanguage: "js", isNodeJS: true };;
+  if (samConfigParser.configExists()) return { iac: "sam", functionLanguage: "js", isNodeJS: true };;
 }
 
 module.exports = {
