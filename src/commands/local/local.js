@@ -5,7 +5,6 @@ const path = require('path');
 const inputUtil = require('../../shared/inputUtil');
 const settingsUtil = require('../../shared/settingsUtil');
 const glob = require('glob');
-const { findConstructs } = require('./cdk-construct-finder');
 const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
@@ -119,7 +118,7 @@ function setupCDK_TS(initialised, cmd) {
     print(data);
     if (data.toString().includes("Watching for file changes") && !initialised) {
 
-      const cdkWrapper = exec(`node ${__dirname}/cdk-wrapper.js .samp-out/${cmd.construct.replace(".ts", "")}.js`, {});
+      const cdkWrapper = exec(`node ${__dirname}/runtime-support/${env.runtime}/cdk/cdk-wrapper.js .samp-out/${cmd.construct.replace(".ts", "")}.js`, {});
       cdkWrapper.stdout.on('data', (data) => {
         print(data);
       });
@@ -159,12 +158,13 @@ async function setupDebug(cmd) {
   let selectedFunctionsCsv = cmd.functions || targetConfig.selected_functions;
   let construct;
   if (env.iac === "cdk") {
-    const constructs = findConstructs();
+    const constructs = require(`./runtime-support/${env.runtime}/cdk/cdk-construct-finder`).findConstructs();
     constructs.push("Enter manually");
     construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
     if (construct === "Enter manually") {
-      construct = await inputUtil.text("Enter which stack construct do you want to debug?");
+      construct = await inputUtil.text("Enter which stack construct do you want to debug");
     }
+    cmd.construct = construct;
     const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
     const stacks = Object.keys(cdkTree.tree.children).filter(c => c !== "Tree");
     stacks.push("Enter manually");
@@ -172,6 +172,8 @@ async function setupDebug(cmd) {
     if (stack === "Enter manually") {
       stack = await inputUtil.text("What's the name of the deployed stack?");
     }
+    cmd.stackName = stack;
+    process.env.SAMP_STACKNAME = stack;
     const regions = [
       "ap-south-1",
       "eu-north-1",

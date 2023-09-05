@@ -15,7 +15,6 @@ for (const file of getAllJsFiles(baseDir)) {
   }
 }
 
-
 const TargetStack = require(`${process.cwd()}/${process.argv[2]}`);
 const className = Object.keys(TargetStack)[0];
 
@@ -32,21 +31,21 @@ for (const key of Object.keys(resources)) {
   const resource = JSON.parse(JSON.stringify(resources[key], getCircularReplacer()));
   delete resource.node?._children?._children?._children?.stack;
   const fingerprintOptions = findShallowestOccurrence(resource, 'fingerprintOptions').occurrence;
-  
+
   const entry = fingerprintOptions?.bundling?.relativeEntryPath || (fingerprintOptions?.path ? `${fingerprintOptions?.path}/` : null);
-  
+
   let logicalId = null;
   let handler
   if (entry) {
     for (const fn of Object.keys(synthedTemplate.Resources)) {
       const resource = synthedTemplate.Resources[fn];
       if (resource.Type === "AWS::Lambda::Function") {
-        if (!resource.Properties?.Code?.S3Bucket) continue; 
+        if (!resource.Properties?.Code?.S3Bucket) continue;
         if (!resource.Properties?.Runtime.startsWith("node")) continue;
         if (resource.Metadata?.["aws:asset:is-bundled"] === false) continue;
-        if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {    
+        if (resource.Metadata?.['aws:cdk:path'].includes(`/${key}/`) && resource.Metadata?.['aws:cdk:path'].includes('/Resource')) {
           //get filename from entry
-          
+
           const entryFile = entry.substring(entry.lastIndexOf("/") + 1).split(".")[0];
           logicalId = fn;
           handler = `${entryFile}.${resource.Properties.Handler.split(".")[1]}`;
