@@ -15,6 +15,11 @@ function setEnvVars(cmd) {
   process.env.SAMP_REGION = cmd.region || process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || '';
   process.env.SAMP_STACKNAME = process.env.SAMP_STACKNAME || cmd.stackName || '';
   process.env.SAMP_CDK_STACK_PATH = cmd.construct || process.env.SAMP_CDK_STACK_PATH || '';
+
+  if (!process.env.SAMP_REGION) {
+    console.log("Please specify a region using --region or by setting the AWS_REGION or AWS_DEFAULT_REGION environment variable");
+    process.exit(1);
+  }
 }
 
 async function run(cmd) {

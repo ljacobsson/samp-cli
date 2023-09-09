@@ -55,7 +55,7 @@ const sourceDirectories = fs.readdirSync('.')
   .filter(handlerPath => fs.statSync(handlerPath).isDirectory() && !handlerPath.startsWith('.') && !handlerPath.startsWith('__') && !handlerPath.startsWith('cdk.out'));
 console.log("sourceDirs", sourceDirectories)
 const assetSourceMap = createAssetSourceMap(assetDirectories, sourceDirectories);
-console.log("asses", assetSourceMap);
+console.log("assets map", assetSourceMap);
 
 
 const template = JSON.parse(fs.readFileSync('cdk.out/' + process.argv[2] + '.template.json', 'utf-8'));
