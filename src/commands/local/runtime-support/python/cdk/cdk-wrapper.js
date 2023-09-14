@@ -11,13 +11,17 @@ function findMatchingSource(assetHash, sourceDirectories) {
   for (const sourceDir of sourceDirectories) {
     const sourceFiles = fs.readdirSync(sourceDir);
     for (const sourceFile of sourceFiles) {
-      if (fs.statSync(path.join(sourceDir, sourceFile)).isDirectory()) return findMatchingSource(assetHash, [path.join(sourceDir, sourceFile)]);
-
-      const sourceFilePath = path.join(sourceDir, sourceFile);
-      const sourceHash = calculateHash(sourceFilePath);
-      console.log("source path and hash", sourceFilePath, sourceHash);
-      if (sourceHash === assetHash) {
-        return sourceDir;
+      if (fs.statSync(path.join(sourceDir, sourceFile)).isDirectory()) {
+        const matchingSourceDir = findMatchingSource(assetHash, [path.join(sourceDir, sourceFile)]);
+        if (matchingSourceDir !== null) {
+          return matchingSourceDir;
+        }
+      } else {
+        const sourceFilePath = path.join(sourceDir, sourceFile);
+        const sourceHash = calculateHash(sourceFilePath);
+        if (sourceHash === assetHash) {
+          return sourceDir;
+        }
       }
     }
   }
@@ -25,6 +29,7 @@ function findMatchingSource(assetHash, sourceDirectories) {
 }
 
 function createAssetSourceMap(assetDirectories, sourceDirectories) {
+  
   const assetSourceMap = {};
 
   for (const assetDir of assetDirectories) {
@@ -32,7 +37,6 @@ function createAssetSourceMap(assetDirectories, sourceDirectories) {
     for (const assetFile of assetFiles) {
       const assetFilePath = path.join(assetDir, assetFile);
       const assetHash = calculateHash(assetFilePath);
-      console.log("asset path and hash", assetFilePath, assetHash);
       const matchingSource = findMatchingSource(assetHash, sourceDirectories);
       if (matchingSource) {
         const assetHashKey = path.basename(assetDir);
@@ -53,10 +57,7 @@ const assetDirectories = fs.readdirSync('cdk.out')
 const sourceDirectories = fs.readdirSync('.')
   .map(handler => path.join('.', handler))
   .filter(handlerPath => fs.statSync(handlerPath).isDirectory() && !handlerPath.startsWith('.') && !handlerPath.startsWith('__') && !handlerPath.startsWith('cdk.out'));
-console.log("sourceDirs", sourceDirectories)
 const assetSourceMap = createAssetSourceMap(assetDirectories, sourceDirectories);
-console.log("assets map", assetSourceMap);
-
 
 const template = JSON.parse(fs.readFileSync('cdk.out/' + process.argv[2] + '.template.json', 'utf-8'));
 // Get all AWS::Lambda::Function resources

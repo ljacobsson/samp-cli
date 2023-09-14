@@ -164,13 +164,15 @@ async function setupDebug(cmd) {
   let selectedFunctionsCsv = cmd.functions || targetConfig.selected_functions;
   let construct;
   if (env.iac === "cdk") {
-    const constructs = require(`./runtime-support/${env.runtime}/cdk/cdk-construct-finder`).findConstructs();
-    constructs.push("Enter manually");
-    construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
-    if (construct === "Enter manually") {
-      construct = await inputUtil.text("Enter which stack construct do you want to debug");
+    if (env.isNodeJS) {
+      const constructs = require(`./runtime-support/${env.runtime}/cdk/cdk-construct-finder`).findConstructs();
+      constructs.push("Enter manually");
+      construct = await inputUtil.autocomplete("Which stack construct do you want to debug?", constructs);
+      if (construct === "Enter manually") {
+        construct = await inputUtil.text("Enter which stack construct do you want to debug");
+      }
+      cmd.construct = construct;
     }
-    cmd.construct = construct;
     const cdkTree = JSON.parse(fs.readFileSync("cdk.out/tree.json", "utf8"));
     const stacks = Object.keys(cdkTree.tree.children).filter(c => c !== "Tree");
     stacks.push("Enter manually");

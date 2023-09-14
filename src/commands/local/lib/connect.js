@@ -46,7 +46,6 @@ console.log(`Using profile: ${targetConfig.profile || 'default'}`);
 
 let credentials;
 try {
-  console.log('targetConfig', targetConfig);
   credentials = await fromSSO({ profile: targetConfig.profile || 'default' })();
 } catch (e) {
 }
@@ -153,10 +152,10 @@ if (!fs.existsSync(".lambda-debug")) {
   const stackName = targetConfig.stack_name;
 
   template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
-  
-stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
-let token = stack.NextToken;
-if (token) {
+
+  stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
+  let token = stack.NextToken;
+  if (token) {
     do {
       const page = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName, NextToken: token }));
       stack.StackResourceSummaries = stack.StackResourceSummaries.concat(page.StackResourceSummaries);

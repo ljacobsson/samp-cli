@@ -45,8 +45,8 @@ export function locatePythonHandler(template, obj, baseDir) {
   const handler = (obj.handler + '/' + functionHandler.split('.')[0]).replace(/\/\//g, '/');
   const handlerMethod = functionHandler.split('.')[1];
   let pyExt = ".py";
-  const module = `file://${`${process.cwd()}/${baseDir}${handler}${pyExt}`.replace(/\/\//g, '/')}`.replace('.samp-out/./', '.samp-out/');
-  console.log("MMM", module);
+  const module = `file://${`${process.cwd()}/${baseDir}${handler}${pyExt}`.replace(/\/\//g, '/')}`.replace('.samp-out/./', '.samp-out/').replace('.samp-out/', '');
+  
   return { module, handlerMethod, runtime: obj.runtime || globals.Runtime || "python" };
 }
 
