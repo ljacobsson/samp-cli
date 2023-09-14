@@ -20,12 +20,13 @@ function setEnvVars(cmd) {
     console.log("Please specify a region using --region or by setting the AWS_REGION or AWS_DEFAULT_REGION environment variable");
     process.exit(1);
   }
+  process.env.SAMP_TEMPLATE_PATH = cmd.template || process.env.SAMP_TEMPLATE_PATH || undefined;
 }
 
 async function run(cmd) {
 
-  env = runtimeEnvFinder.determineRuntime();
   setEnvVars(cmd);
+  env = runtimeEnvFinder.determineRuntime();
   if (cmd.mergePackageJsons) {
     await mergePackageJsons();
   }
@@ -222,8 +223,20 @@ async function setupDebug(cmd) {
         functions.push(...response.StackResourceSummaries.filter(r => r.ResourceType === "AWS::Lambda::Function"));
         token = response.NextToken;
       } catch (e) {
-        console.log(`Failed to list stack resources for stack '${stack}' in '${region}' using profile '${profile}'.`, e.message);
-        process.exit(1);
+        if (!stack) {
+          console.log("Stack name could not be found. Please rerun the command and specify the stack name using --stack-name <stack-name>");
+          return;
+        }
+        if (!region) {
+          console.log("AWS region could not be found. Please rerun the command and specify the region using --region <region>");
+          return;
+        }
+        if (!profile) {
+          profile = "default";
+        } else {
+          console.log(`Failed to list stack resources for stack '${stack}' in '${region}' using profile '${profile}'.`, e.message);
+          process.exit(1);
+        }
       }
     } while (token);
     functionNames = functions.map(f => f.LogicalResourceId);
@@ -235,7 +248,11 @@ async function setupDebug(cmd) {
     const selectedFunctionsText = selectedFunctions.length === functionNames.length ? "all functions" : selectedFunctions.join(",");
     name = await inputUtil.text("Enter a name for the configuration", "Debug " + selectedFunctionsText);
     selectedFunctionsCsv = selectedFunctions.join(",")
-    args.push("--functions", selectedFunctionsCsv, "--profile", profile);
+    args.push("--functions", selectedFunctionsCsv, "--profile", profile, "--region", region, "--stack-name", stack);
+  }
+
+  if (process.env.SAMP_TEMPLATE_PATH) {
+    args.push("--template", process.env.SAMP_TEMPLATE_PATH);
   }
 
   const runtime = env.isNodeJS ? "nodejs" : env.functionLanguage;
@@ -293,8 +310,8 @@ function validate(env) {
     }
   }
 
-  if (!fs.existsSync("samconfig.toml") && !fs.existsSync("cdk.json")) {
-    console.log("No samconfig.toml found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
+  if (!samConfigParser.configExists() && !fs.existsSync("cdk.json")) {
+    console.log("No samconfig found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
     return false;
   }
 
