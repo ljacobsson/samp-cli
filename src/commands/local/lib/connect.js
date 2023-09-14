@@ -34,7 +34,7 @@ if (fs.existsSync(`${homedir()}/.lambda-debug/uuid`)) {
 }
 
 let targetConfig = {};
-if (fs.existsSync(`samconfig.toml`)) {
+if (samConfigParser.configExists()) {
   targetConfig = samConfigParser.parse();
 }
 targetConfig = {

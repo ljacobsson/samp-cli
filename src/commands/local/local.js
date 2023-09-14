@@ -303,9 +303,9 @@ function validate(env) {
     }
   }
 
-  if (!fs.existsSync("samconfig.toml") && !fs.existsSync("cdk.json")) {
-    console.log("No samconfig.toml found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
-    //return false;
+  if (!samConfigParser.configExists() && !fs.existsSync("cdk.json")) {
+    console.log("No samconfig found. Please make sure you have deployed your functions before running this command. You can deploy your functions by running 'sam deploy --guided'");
+    return false;
   }
 
   if (fs.existsSync("cdk.json") && !fs.existsSync("cdk.out")) {

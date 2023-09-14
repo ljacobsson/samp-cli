@@ -6,6 +6,7 @@ const { fromSSO } = require("@aws-sdk/credential-provider-sso");
 const lambdaInvoker = require("./lambdaInvoker");
 const stepFunctionsInvoker = require("./stepFunctionsInvoker");
 const inputUtil = require('../../shared/inputUtil');
+const samConfigParser = require('../../shared/samConfigParser');
 const parser = require("../../shared/parser");
 const fs = require("fs");
 const ini = require('ini');
@@ -42,8 +43,8 @@ async function run(cmd) {
       console.log("Using default profile. Override by setting --profile <your profile>");
     } 
   }
-  else if (fs.existsSync("samconfig.toml")) {
-    const config = ini.parse(fs.readFileSync("samconfig.toml", "utf8"));
+  else if (samConfigParser.configExists()) {
+    const config = samConfigParser.parse();
     const params = { ...config?.default?.deploy?.parameters, ...(config?.default?.global?.parameters || {}) };
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);

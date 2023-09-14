@@ -3,7 +3,7 @@
 ### Prerequisites:
 * Function runtime should be `dotnet6`
 * Has to be a SAM project. CDK might be supported later.
-* It assumes a folder structure where the SAM template is in the root, next to the `samconfig.toml` file
+* It assumes a folder structure where the SAM template is in the root, next to the `samconfig.[toml/yaml]` file
 * The SAM template can be in either JSON or YAML format and can be called anything with a `json`, `yml`, `yaml` or `.template` extension
 * You need to have npm/node installed on your system.
 
