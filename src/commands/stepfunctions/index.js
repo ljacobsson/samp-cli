@@ -15,9 +15,9 @@ program
 
   .action(async (cmd, opts) => {
     if (cmd === "init") {
-      cmd.logicalId = await inputUtil.text("Name of state machine resource", "StateMachine");
-      cmd.aslFile = await inputUtil.text("Path to output ASL definition file", "statemachine.yaml");
-      cmd.eventSource = await inputUtil.list("Event source for state machine", ["none", "eventbridge", "api", "schedule"]);
+      opts.logicalId = await inputUtil.text("Name of state machine resource", "StateMachine");
+      opts.aslFile = await inputUtil.text("Path to output ASL definition file", "statemachine.yaml");
+      opts.eventSource = await inputUtil.list("Event source for state machine", ["none", "eventbridge", "api", "schedule"]);
       await init.run(opts);
     } else if (cmd === "sync") {
       await sync.run(opts);

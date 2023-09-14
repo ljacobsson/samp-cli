@@ -12,30 +12,23 @@ function determineRuntime() {
     const runtime = (template.Resources[firstFunction].Properties.Runtime || template.Globals?.Function?.Runtime).substring(0, 3);
     switch (runtime) {
       case "dot":
-        return { iac: "sam", functionLanguage: "dotnet" };
+        return { iac: "sam", functionLanguage: "dotnet", runtime: "dotnet" };
       case "pyt":
-        return { iac: "sam", functionLanguage: "python" };
+        return { iac: "sam", functionLanguage: "python", runtime: "python" };
       case "jav":
-        return { iac: "sam", functionLanguage: "java" };
+        return { iac: "sam", functionLanguage: "java", runtime: "java" };
+      case "nod": {
+        const isTs = fs.existsSync(path.join(process.cwd(), 'tsconfig.json'));
+        return { iac: "sam", functionLanguage: isTs ? "ts" : "js", runtime: "nodejs", isNodeJS: true };
+      }
     }
   }
-  if (fs.existsSync('cdk.json')) return { iac: "cdk", functionLanguage: "ts", isNodeJS: true };
-  if (fs.existsSync('tsconfig.json')) return { iac: "sam", functionLanguage: "ts", isNodeJS: true };;
-
-  // does a file ending -csproj exist in the current folder or subfolders?
-  const csprojFiles = [];
-  const walkSync = (dir, filelist = []) => {
-    fs.readdirSync(dir).forEach(file => {
-      const dirFile = path.join(dir, file);
-      try {
-        filelist = walkSync(dirFile, filelist);
-      } catch (err) {
-        if (err.code === 'ENOTDIR' || err.code === 'EBUSY') filelist = [...filelist, dirFile];
-        else throw err;
-      }
-    });
-    return filelist;
+  if (fs.existsSync('cdk.json')) {
+    const cdkJson = JSON.parse(fs.readFileSync('cdk.json', 'utf8'));
+    if (cdkJson.app.includes('python')) return { iac: "cdk", functionLanguage: "python", runtime: "python" };
+    return { iac: "cdk", functionLanguage: "ts", runtime: "nodejs", isNodeJS: true };
   }
+  if (fs.existsSync('tsconfig.json')) return { iac: "sam", functionLanguage: "ts", runtime: "nodejs", isNodeJS: true };
   walkSync(process.cwd()).forEach(file => {
     if (file.endsWith('.csproj')) csprojFiles.push(file);
   });

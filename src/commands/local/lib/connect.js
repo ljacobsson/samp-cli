@@ -152,6 +152,7 @@ if (!fs.existsSync(".lambda-debug")) {
   const stackName = targetConfig.stack_name;
 
   template = parse("template", fs.readFileSync(findSAMTemplateFile('.')).toString());
+
   stack = await cfnClient.send(new ListStackResourcesCommand({ StackName: stackName }));
   let token = stack.NextToken;
   if (token) {
