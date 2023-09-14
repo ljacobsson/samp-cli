@@ -12,6 +12,7 @@ program
   .option("-i --ide [ide]", "IDE to configure for debugging. Default behaviour will attempt to figure it out automatically or prompt you to select one. Valid values: vscode, visualstudio, jetbrains (for WebStorm, Rider or PyCharm)")  
   .option("-d, --debug", "Configure debug for vscode. This only needs to be run once per project", false)
   .option("-p, --profile [profile]", "AWS profile to use")
+  .option("-t, --template [template]", "The path to your template path. Default will try to find it in your cuurrent working directory. Only use this if your template is not in the root of your project")
   .option("--region [region]", "The AWS region to use. Falls back on AWS_REGION environment variable if not specified")
   .action(async (cmd) => {
     cmd.construct = cmd.construct || `./lib/${cmd.stackName}.ts`;

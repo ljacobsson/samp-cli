@@ -22,6 +22,9 @@ function stringify(identifier, obj) {
 }
 
 function findSAMTemplateFile(directory) {
+  if (process.env.SAMP_TEMPLATE_PATH && process.env.SAMP_TEMPLATE_PATH !== 'undefined') {
+    return process.env.SAMP_TEMPLATE_PATH;
+  }
   if (fs.existsSync("./cdk.json")) {
     return ".samp-out/mock-template.yaml";
   }

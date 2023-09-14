@@ -39,6 +39,9 @@ function copyConfig(name, args) {
   }
 
   const task = taskConfig.tasks[0];
+  if (process.env.SAMP_TEMPLATE_PATH) {
+    task.command += ` --template ${process.env.SAMP_TEMPLATE_PATH}`;
+  }
   let tasksJson;
   if (fs.existsSync(`${pwd}/.vscode/tasks.json`)) {
     tasksJson = commentJson.parse(fs.readFileSync(`${pwd}/.vscode/tasks.json`, "utf8"));
