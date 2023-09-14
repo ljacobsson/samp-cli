@@ -12,7 +12,8 @@ let region;
 async function run(cmd) {
   if (samConfigParser.configExists()) {
     const config = samConfigParser.parse();
-    const params = config?.default?.deploy?.parameters;
+    console.log(config)
+    const params = config
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);
       cmd.stackName = params.stack_name;

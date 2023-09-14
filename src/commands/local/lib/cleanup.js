@@ -70,11 +70,11 @@ const updatePromises = functions.map(async functionName => {
       // Sleep 1 second to avoid throttling
       await new Promise(resolve => setTimeout(resolve, 1000));
       let bucket = func.Properties.Code.S3Bucket;
-      if (typeof bucket !== "string") {
+      if (bucket && typeof bucket !== "string") {
         bucket = bucket["Fn::Sub"];
         bucket = bucket.replace("${AWS::AccountId}", conf.accountId);
         bucket = bucket.replace("${AWS::Region}", conf.envConfig.region);
-      }
+      } 
       if (func.Properties?.Code?.S3Key) {
         const params = {
           FunctionName: physicalId,
