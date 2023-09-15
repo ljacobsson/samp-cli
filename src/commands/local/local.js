@@ -203,7 +203,10 @@ async function setupDebug(cmd) {
     ];
     region = region || await inputUtil.autocomplete("What's the region of the deployed stack?", regions);
     profile = profile || await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
-    args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct);
+    args.push("-s", stack, "--region", region, "--profile", profile);
+    if (construct) {
+      args.push("--construct", construct);
+    }
   }
 
   try {
@@ -280,7 +283,7 @@ async function setupDebug(cmd) {
   if (env.isNodeJS) {
     console.log("Debug setup complete. You can now select the debug configuration from the dropdown and hit F5 to start debugging");
   } else {
-    console.log("Debug setup complete. You can now run `samp local`, select the debug configuration from the dropdown and hit F5 to start debugging");
+    console.log(`Debug setup complete. You can now run 'samp local --region ${region} --profile ${profile} --stack-name ${stack}', select the debug configuration from the dropdown and hit F5 to start debugging`);
   }
 }
 

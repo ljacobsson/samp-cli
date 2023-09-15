@@ -51,7 +51,6 @@ export function locatePythonHandler(template, obj, baseDir) {
 }
 
 export function locateHandler(template, obj, baseDir) {
-  console.log("LOCATE HANDLER", obj);
   if (!obj.runtime || obj.runtime.startsWith("nodejs")) return locateJsHandler(template, obj, baseDir);
   if (obj.runtime.startsWith("dotnet")) return locateDotnetHandler(template, obj, baseDir);
   if (obj.runtime.startsWith("python")) return locatePythonHandler(template, obj, baseDir);

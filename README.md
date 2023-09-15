@@ -160,6 +160,17 @@ Java and Go are not supported at this time, but will be added in the future.
 | JetBrains PyCharm  |                |      | ✓      |
 | JetBrains WebStorm | ✓              |      |        |
 
+#### Supported IaC frameworks
+|                          | SAM | CDK |
+|--------------------------|-----------|
+| NodeJS (TypeScript only) | ✓   | ✓   |
+| Python                   | ✓   | ✓   |
+| .NET                     | ✓   |     |
+
+Note that this is assuming that the CDK code and Lambda code are written in the same language. At this time you can't use TypeScript CDK with Lambda functions written in Python.
+
+See issue [#24](https://github.com/ljacobsson/samp-cli/issues/24) if you're using TypeScript
+
 #### How does it work?
 The tool temporarily replaces your function code in the cloud with a proxy function that relays events to your local machine over AWS IoT (MQTT). The functions are automatically restored when you exit the debugging session with the values in your processed CloudFormation tempate. The tool also sets the MemorySize to 128MB and Timeout to 60 seconds to avoid timeouts during debugging as well as saving cost.
 

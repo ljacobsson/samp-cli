@@ -103,6 +103,7 @@ function removeDuplicatesFromFile(filePath) {
   let uniqueLines = [...new Set(lines)]; // Use a Set to remove duplicates
   uniqueLines = uniqueLines.filter(line => !line.startsWith('pytest'));
   uniqueLines.push('watchdog');
+  uniqueLines.push('boto3');
   const uniqueContent = uniqueLines.join('\n');
   fs.writeFileSync(outputFile, uniqueContent);
   fs.unlinkSync(filePath);
