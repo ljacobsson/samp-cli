@@ -120,6 +120,8 @@ function setupCDK_TS(initialised, cmd) {
 
   // build to get the stack construct as js    
   const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --outDir ${process.env.outDir} --noEmit false --inlineSourceMap false --sourceMap true`, {});
+  copyFiles(process.cwd(), `${process.cwd()}/.samp-out`);
+
   tscProcess.stdout.on('data', (data) => {
     print(data);
     if (data.toString().includes("Watching for file changes") && !initialised) {
@@ -145,6 +147,29 @@ function setupCDK_TS(initialised, cmd) {
     print(data);
   });
   return initialised;
+}
+function copyFiles(source, destination) {
+  // Ensure destination directory exists.
+  if (!fs.existsSync(destination)) {
+      fs.mkdirSync(destination, { recursive: true });
+  }
+
+  const items = fs.readdirSync(source);
+
+  items.forEach(item => {
+      const itemPath = path.join(source, item);
+      const destPath = path.join(destination, item);
+
+      const stat = fs.statSync(itemPath);
+
+      if (stat.isDirectory()) {
+          if (item !== 'node_modules' && item !== '.git' && item !== '.samp-out' && item !== "cdk.out") {
+              copyFiles(itemPath, destPath);
+          }
+      } else if (path.extname(itemPath) !== '.ts') {
+          fs.copyFileSync(itemPath, destPath);
+      }
+  });
 }
 
 function print(data) {
