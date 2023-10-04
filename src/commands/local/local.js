@@ -102,6 +102,8 @@ function setupSAM_TS(initialised) {
   // remove // comments
   fileContent = fileContent.replace(/\/\/.*/g, '');
   const tscProcess = exec(`${__dirname}/../../../node_modules/.bin/tsc-watch --module commonjs --sourceMap true --outDir ${process.env.outDir} --noEmit false`, {});
+  copyFiles(process.cwd(), `${process.cwd()}/.samp-out`);
+
   tscProcess.stdout.on('data', (data) => {
     console.log("tsc: ", data.toString().replace(/\n$/, ''));
     if (data.toString().includes("Watching for file changes") && !initialised) {
