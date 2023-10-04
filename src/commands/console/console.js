@@ -14,6 +14,7 @@ async function run(cmd) {
     const config = samConfigParser.parse();
     console.log(config)
     const params = config
+    region = cmd.region;
     if (!cmd.stackName && params.stack_name) {
       console.log("Using stack name from config:", params.stack_name);
       cmd.stackName = params.stack_name;
