@@ -61,7 +61,11 @@ const packageVersion = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..
 
 const zipFilePath = path.join(os.homedir(), '.lambda-debug', `relay-${accountId}-${packageVersion}.zip`);
 
-if (!fs.existsSync(".lambda-debug")) {
+if (fs.existsSync(".lambda-debug")) {
+  certData = JSON.parse(fs.readFileSync(".lambda-debug", 'utf-8')).certData;
+}  
+
+if (!fs.existsSync(".lambda-debug") || !certData) {
   const createKeysAndCertificate = async () => {
 
     const homeDir = os.homedir();
@@ -230,6 +234,14 @@ const functionSources = functions.map(key => { return { uri: template.Resources[
     }
   }
 
+  // if (process.env.SAMP_TEMPLATE_PATH && process.env.SAMP_TEMPLATE_PATH.includes("/")) {
+  //   // split by slash and remove last element
+  //   const split = process.env.SAMP_TEMPLATE_PATH.split("/");
+  //   split.pop();
+  //   baseDir = split.join("/") + "/" + baseDir;
+  // }
+
+
   const { module, handlerMethod, runtime } = locateHandler(template, obj, baseDir);
   map[obj.name] = {
     module,
@@ -246,7 +258,6 @@ for (const source of Object.values(functionSources)) {
     process.exit(1);
   }
 }
-
 const connectOptions = {
   connectTimeout: 4000,
   ca: certData.ca,

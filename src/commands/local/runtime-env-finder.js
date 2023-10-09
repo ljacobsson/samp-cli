@@ -29,10 +29,6 @@ function determineRuntime() {
     return { iac: "cdk", functionLanguage: "ts", runtime: "nodejs", isNodeJS: true };
   }
   if (fs.existsSync('tsconfig.json')) return { iac: "sam", functionLanguage: "ts", runtime: "nodejs", isNodeJS: true };
-  walkSync(process.cwd()).forEach(file => {
-    if (file.endsWith('.csproj')) csprojFiles.push(file);
-  });
-  if (csprojFiles.length > 0) return { iac: "sam", functionLanguage: "dotnet" };;
 
   if (fs.existsSync('nuget.config')) return { iac: "sam", functionLanguage: "dotnet" };;
   if (samConfigParser.configExists()) return { iac: "sam", functionLanguage: "js", isNodeJS: true };;

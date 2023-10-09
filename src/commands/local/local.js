@@ -230,7 +230,7 @@ async function setupDebug(cmd) {
     ];
     region = region || await inputUtil.autocomplete("What's the region of the deployed stack?", regions);
     profile = profile || await inputUtil.text("AWS profile", process.env.AWS_PROFILE || "default");
-    args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct);
+    args.push("-s", stack, "--region", region, "--profile", profile, "--construct", construct || '');
   }
 
   try {

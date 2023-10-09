@@ -40,6 +40,7 @@ def run_function_from_module(data, path):
 
     if hasattr(module, function_name):
         func = getattr(module, function_name)
+        data["obj"]["context"]["get_remaining_time_in_millis"] = lambda: 10000
         context = DictToObject(convert_camel_to_snake(data["obj"]["context"]))
         response = func(data["obj"]["event"], context)
         response_file_path = path.replace("samp-requests", "samp-responses")

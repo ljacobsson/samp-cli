@@ -12,7 +12,6 @@ let region;
 async function run(cmd) {
   if (samConfigParser.configExists()) {
     const config = samConfigParser.parse();
-    console.log(config)
     const params = config
     region = cmd.region;
     if (!cmd.stackName && params.stack_name) {
