@@ -1,6 +1,6 @@
 {
   "name": "samp-cli",
-  "version": "1.0.62",
+  "version": "1.0.63",
   "description": "CLI tool for extended productivity with AWS Serverless Application Model (SAM)",
   "main": "index.js",
   "scripts": {
@@ -43,6 +43,7 @@
     "@mhlabs/xray-cli": "^1.0.8",
     "@octokit/rest": "^18.5.2",
     "archiver": "^6.0.0",
+    "ascii-table3": "^0.9.0",
     "aws-cdk-lib": "^2.87.0",
     "axios": "^1.4.0",
     "chokidar": "^3.5.3",

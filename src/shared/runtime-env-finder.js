@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const { parse, findSAMTemplateFile } = require('../../shared/parser');
-const samConfigParser = require('../../shared/samConfigParser');
+const { parse, findSAMTemplateFile } = require('./parser');
+const samConfigParser = require('./samConfigParser');
 
 function determineRuntime() {
   const templateFile = findSAMTemplateFile(process.cwd());
@@ -9,6 +9,7 @@ function determineRuntime() {
 
     const template = parse("sam", fs.readFileSync(templateFile, 'utf8'));
     const firstFunction = Object.keys(template.Resources).find(key => template.Resources[key].Type === "AWS::Serverless::Function");
+    if (!firstFunction) return { functionless: true }
     const runtime = (template.Resources[firstFunction].Properties.Runtime || template.Globals?.Function?.Runtime).substring(0, 3);
     switch (runtime) {
       case "dot":
@@ -31,7 +32,7 @@ function determineRuntime() {
   if (fs.existsSync('tsconfig.json')) return { iac: "sam", functionLanguage: "ts", runtime: "nodejs", isNodeJS: true };
 
   if (fs.existsSync('nuget.config')) return { iac: "sam", functionLanguage: "dotnet" };;
-  if (samConfigParser.configExists()) return { iac: "sam", functionLanguage: "js", isNodeJS: true };;
+  if (samConfigParser.configExists()) return { iac: "sam", functionLanguage: "js", isNodeJS: true, defaulted: true };;
 }
 
 module.exports = {

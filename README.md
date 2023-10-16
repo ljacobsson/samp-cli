@@ -30,6 +30,7 @@ This is the continuation of the now deprecated `sam-patterns-cli` tool. It has b
   - [samp policy](#samp-policy) - generate IAM policies for your Lambda functions, state machines and IAM roles
   - [samp return-values](#samp-return-values) - get the return values of a SAM/CloudFormation resource
   - [samp share](#samp-share) - share a serverless pattern with your team or the community
+  - [samp powertools](#samp-powertools) - quickly finds and installs the latest version of [AWS Lambda Powertools](https://docs.powertools.aws.dev/lambda/typescript/latest/)
 - [Customise pattern imports using placeholders and property manipulation](#customise-pattern-imports-using-placeholders-and-property-manipulation)
 - [Known issues and limitations](#known-issues-and-limitations)
 
@@ -361,6 +362,17 @@ Options:
   -h, --help  display help for command
 ```
 
+### samp powertools
+Quickly Lambda Powertools modules and installs them in your project. 
+
+```
+Usage: samp powertools|pt [options]
+
+Adds Lambda Powertools to your project
+
+Options:
+  -h, --help  display help for command
+```
 
 ### samp share
 Lets you share patterns from an existing CloudFormation/SAM template with the world or your colleagues.

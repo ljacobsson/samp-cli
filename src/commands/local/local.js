@@ -8,7 +8,7 @@ const glob = require('glob');
 const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
-const runtimeEnvFinder = require('./runtime-env-finder');
+const runtimeEnvFinder = require('../../shared/runtime-env-finder');
 let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || '';

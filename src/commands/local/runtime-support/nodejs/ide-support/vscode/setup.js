@@ -1,6 +1,6 @@
 const fs = require("fs");
 const commentJson = require('comment-json')
-const runtimeEnvFinder = require('../../../../runtime-env-finder');
+const runtimeEnvFinder = require('../../../../../../shared/runtime-env-finder');
 
 
 const pwd = process.cwd();
