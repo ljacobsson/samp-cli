@@ -33,7 +33,7 @@ const modules = {
 async function run(cmd) {
   const runtime = runtimeFinder.determineRuntime();
 
-  if (runtime.functionless) {
+  if (!runtime || runtime.functionless) {
     console.log("Could not find any functions in your SAM template");
     return;
   }
