@@ -1,12 +1,14 @@
 const { SFNClient, DescribeStateMachineForExecutionCommand, StartExecutionCommand, ListExecutionsCommand, DescribeExecutionCommand } = require('@aws-sdk/client-sfn');
 const { SchemasClient, DescribeSchemaCommand, UpdateSchemaCommand, CreateSchemaCommand, CreateRegistryCommand } = require('@aws-sdk/client-schemas');
 const { fromSSO } = require("@aws-sdk/credential-provider-sso");
+const samConfigParser = require('../../shared/samConfigParser');
 const link2aws = require('link2aws');
 const fs = require('fs');
 const inputUtil = require('../../shared/inputUtil');
 const registryName = "sfn-testevent-schemas";
 async function invoke(cmd, sfnArn) {
-  const sfnClient = new SFNClient({ credentials: await fromSSO({ profile: cmd.profile }) });
+  const config = await samConfigParser.parse();
+  const sfnClient = new SFNClient({ credentials: await fromSSO({ profile: cmd.profile || config.profile }), region: cmd.region || config.region });
   const schemasClient = new SchemasClient({ credentials: await fromSSO({ profile: cmd.profile }) });
   const stateMachineName = sfnArn.split(":").pop();
   if (!cmd.payload) {
