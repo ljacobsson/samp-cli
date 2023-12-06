@@ -77,13 +77,15 @@ async function getInput(stateMachineArn, state, stateMachineType) {
         fs.mkdirSync(path.join(os.homedir(), '.samp-cli', 'state-tests'), { recursive: true });
     }
 
-    const stateMachineStateFileExists = fs.existsSync(path.join(os.homedir(), '.samp-cli', 'state-tests', stateMachineArn));
+    const fileName = stateMachineArn.replace(/:/g, "-");
+
+    const stateMachineStateFileExists = fs.existsSync(path.join(os.homedir(), '.samp-cli', 'state-tests', fileName));
 
     if (!stateMachineStateFileExists) {
-        fs.writeFileSync(path.join(os.homedir(), '.samp-cli', 'state-tests', stateMachineArn), "{}");
+        fs.writeFileSync(path.join(os.homedir(), '.samp-cli', 'state-tests', fileName), "{}");
     }
 
-    const storedState = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.samp-cli', 'state-tests', stateMachineArn), "utf8"));
+    const storedState = JSON.parse(fs.readFileSync(path.join(os.homedir(), '.samp-cli', 'state-tests', fileName), "utf8"));
     if (Object.keys(storedState).length > 0) {
         types = ["Latest input", ...types];
     }
