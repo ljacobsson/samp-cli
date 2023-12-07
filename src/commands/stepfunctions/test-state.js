@@ -12,9 +12,25 @@ const { Spinner } = require('cli-spinner');
 
 const os = require('os');
 let clientParams;
-async function run(cmd) {
+async function run(cmd) {    
     const config = await samConfigParser.parse();
-    const credentials = await fromSSO({ profile: cmd.profile || config.profile || 'default' });
+    
+    if (!cmd.stackName && !config.stack_name) {
+        console.log("No stack name found. Use --stack-name or set stack_name in samconfig.toml");
+        process.exit(1);
+    }
+
+    if (!cmd.region && !config.region) {
+        console.log("No region found. Use --region or set region in samconfig.toml");
+        process.exit(1);
+    }
+    
+    let credentials;
+    try {
+      credentials = await fromSSO({ profile: cmd.profile || config.profile || 'default' });
+    } catch (e) {
+    }
+  
     clientParams = { credentials, region: cmd.region || config.region }
     const sfnClient = new SFNClient(clientParams);
     const cloudFormation = new CloudFormationClient(clientParams);

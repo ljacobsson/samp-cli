@@ -15,6 +15,7 @@ program
   .option("--region [region]", "The AWS region to use. Falls back on AWS_REGION environment variable if not specified")
 
   .action(async (cmd, opts) => {
+    try {
     if (cmd === "init") {
       opts.logicalId = await inputUtil.text("Name of state machine resource", "StateMachine");
       opts.aslFile = await inputUtil.text("Path to output ASL definition file", "statemachine.yaml");
@@ -27,5 +28,12 @@ program
     } else {
       console.log("Unknown command. Valid commands are: init, sync, test-state");
     }
+  } catch (e) {
+    console.log("\n" + e.message + "\nTo see the full stack trace, set environment variable SAMP_DEBUG=1 and run the command again.");
+    if (process.env.SAMP_DEBUG) {
+      console.log(e.stack);
+    }
+    process.exit(1);
+  }
     return;
   });
