@@ -1,11 +1,26 @@
 const inquirer = require("inquirer");
 const inquirerFileTreeSelection = require("inquirer-file-tree-selection-prompt");
+const TreePrompt = require('inquirer-tree-prompt');
 const fs = require("fs");
 inquirer.registerPrompt("file-tree-selection", inquirerFileTreeSelection);
 inquirer.registerPrompt(
   "autocomplete",
   require("inquirer-autocomplete-prompt")
 );
+
+inquirer.registerPrompt('tree', TreePrompt);
+
+async function tree(message, items) {
+  return (
+    await inquirer.prompt({
+      type: "tree",
+      name: "item",
+      tree: items,
+      message: message,
+    })
+  ).item;
+}
+
 
 async function choices(message, items, type, defaults, pageSize = 5) {
   return (
@@ -16,6 +31,7 @@ async function choices(message, items, type, defaults, pageSize = 5) {
       message: message,
       default: defaults,
       pageSize: pageSize,
+
       source: function (answersYet, input) {
         if (!input) {
           return items;
@@ -109,5 +125,6 @@ module.exports = {
   text,
   prompt,
   files,
-  file
+  file,
+  tree
 };
