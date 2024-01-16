@@ -29,7 +29,7 @@ function findSAMTemplateFile(directory) {
     return ".samp-out/mock-template.yaml";
   }
   const files = fs.readdirSync(directory);
-
+  const paths = [];
   for (const file of files) {
     const filePath = path.join(directory, file);
 
@@ -40,9 +40,18 @@ function findSAMTemplateFile(directory) {
       // Check if the content of the file contains the specified string
       if (content.includes('AWS::Serverless-2016-10-31')) {
         //console.log('SAM template file found:', file);
-        return filePath;
+        paths.push(filePath);
       }
     }
+  }
+
+  if (paths.length === 1) {
+    return paths[0];
+  }
+
+  if (paths.length > 1) {
+    console.log('Multiple SAM template files found. Please specify which one to use with the --template option.');
+    process.exit(1);
   }
 
   console.log('Template file not found.');
