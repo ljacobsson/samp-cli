@@ -9,8 +9,10 @@ const inputUtil = require('../../shared/inputUtil');
 const clc = require("cli-color");
 const path = require('path');
 const { Spinner } = require('cli-spinner');
+const jp = require('jsonpath');
 
 const os = require('os');
+const { ConflictingResourceUpdateException } = require('@aws-sdk/client-iot');
 let clientParams;
 async function run(cmd) {
     const config = await samConfigParser.parse();
@@ -42,7 +44,7 @@ async function run(cmd) {
     const stateMachine = stateMachines.length === 1 ? stateMachines[0] : await inputUtil.list("Select state machine", stateMachines);
 
     const definitionFile = templateObj.Resources[stateMachine].Properties.DefinitionUri;
-
+    const definitionObj = parser.parse("definition", fs.readFileSync(definitionFile, 'utf8'));
     const spinner = new Spinner(`Fetching state machine ${stateMachine}... %s`);
     spinner.setSpinnerString(30);
     spinner.start();
@@ -54,6 +56,7 @@ async function run(cmd) {
 
     const describedStateMachine = await sfnClient.send(new DescribeStateMachineCommand({ stateMachineArn }));
     const definition = JSON.parse(describedStateMachine.definition);
+    findAllDefinitionSubstitutions(definition, definitionObj);
 
     spinner.stop(true);
     const states = findStates(definition);
@@ -64,28 +67,23 @@ async function run(cmd) {
     const accountId = (await sts.send(new GetCallerIdentityCommand({}))).Account;
     console.log(`Invoking state ${clc.green(state.name)} with input:\n${clc.green(input)}\n`);
 
+    await testState(sfnClient, state, accountId, stateMachineRoleName, input);
     if (cmd.watch) {
-        let revisionId;
-        let spinner;
-        do {
-            const stateMachine = await sfnClient.send(new DescribeStateMachineCommand({ stateMachineArn }));
-            if (revisionId !== stateMachine.revisionId) {
-                if (spinner)
-                    spinner.clearLine();
-                const definition = JSON.parse(stateMachine.definition);
-                const states = findStates(definition);
+        console.log("Watching for changes in definition file... Press Ctrl+C / Command+. to stop.");
+
+        fs.watchFile(definitionFile, async () => {
+            const fileContent = fs.readFileSync(definitionFile, 'utf8');
+            try {
+                const definitionObj = parser.parse("asl", fileContent);
+                const substitutedDefinition = findAllDefinitionSubstitutions(definition, definitionObj);
+                const states = findStates(substitutedDefinition);
                 const updatedState = states.find(s => s.key === state.name);
                 console.log("StateMachine updated. Testing state...");
                 await testState(sfnClient, updatedState, accountId, stateMachineRoleName, input);
-                revisionId = stateMachine.revisionId;
-                spinner = new Spinner(`Waiting for changes... %s`);
-                spinner.setSpinnerString(28);
-                spinner.start();
+            } catch (e) {
+                console.log("Error parsing definition file. Make sure it's valid JSON.\n", e.message);
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
-        } while (true);
-    } else {
-        await testState(sfnClient, state, accountId, stateMachineRoleName, input);
+        });
     }
 }
 
@@ -104,14 +102,52 @@ async function testState(sfnClient, state, accountId, stateMachineRoleName, inpu
     }
     for (const key in testResult) {
         let value;
+        let jsonPaths;
         try {
-            value = JSON.stringify(JSON.parse(testResult[key]), null, 2);
+            const json = JSON.parse(testResult[key]);
+            value = JSON.stringify(json, null, 2);
+            if (key === "output") {
+                jsonPaths = [...new Set(listJsonPaths(json))];
+            }
         }
         catch (e) {
             value = testResult[key];
         }
-        console.log(`\n${clc[color](key.charAt(0).toUpperCase() + key.slice(1))}: ${value}`);
+        let outputValue = value;
+        if (value.split('\n').length > 10 || value.length > 1000) {
+            outputValue = value.split('\n').slice(0, 10).join('\n') + "\n... (truncated - see output file for full result)";
+        }
+        console.log(`\n${clc[color](key.charAt(0).toUpperCase() + key.slice(1))}: ${outputValue}`);
+        if (key === "output") {
+            fs.writeFileSync("./samp-test-state-output.json", value);
+            console.log(`\nState output written to ${clc.green("./samp-test-state-output.json")}\n\nAvailable JSON paths on output:\n${clc.blue(jsonPaths.join("\n"))}`);
+        }
     }
+}
+
+function listJsonPaths(obj, prefix = '$') {
+    let paths = [];
+    for (const [key, value] of Object.entries(obj)) {
+        let path = `${prefix}.${key}`;
+
+        if (typeof obj === 'string' || typeof obj === 'number' || typeof obj === 'boolean' || obj === null)
+            return [prefix];
+        if (value !== null && typeof value === 'object') {
+            if (!Array.isArray(value)) {
+                paths = paths.concat(listJsonPaths(value, path));
+            } else {
+                for (let i = 0; i < value.length; i++) {
+                    paths = paths.concat(listJsonPaths(value[i], `${path}[${i}]`));
+                }
+            }
+        } else {
+            const regex = /\[\d+\]/g;
+            path = path.replace(regex, '[*]');
+            if (!paths.includes(path))
+                paths.push(path);
+        }
+    }
+    return paths;
 }
 
 async function getInput(stateMachineArn, state, stateMachineType) {
@@ -176,8 +212,51 @@ async function getInput(stateMachineArn, state, stateMachineType) {
     }
 }
 
+
+function findAllDefinitionSubstitutions(deployedDefinition, aslObj, currentPath = '') {
+    const result = [];
+    const regex = /\${(.+?)}/g;
+
+    function formatKey(key) {
+        // Check if the key contains spaces or special characters that need quoting
+        return key.match(/\s|\.|\[|\]/) ? `['${key}']` : `.${key}`;
+    }
+
+    function traverse(obj, path) {
+        if (obj !== null && typeof obj === "object" && !Array.isArray(obj)) {
+            Object.entries(obj).forEach(([key, value]) => {
+                // Adjust path format for keys with spaces
+                const formattedKey = formatKey(key);
+                const newPath = path ? `${path}${formattedKey}` : key;
+                traverse(value, newPath);
+            });
+        } else if (Array.isArray(obj)) {
+            obj.forEach((item, index) => {
+                const newPath = `${path}[${index}]`;
+                traverse(item, newPath);
+            });
+        } else if (typeof obj === "string") {
+            let match;
+            while (match = regex.exec(obj)) {
+                // Adjust for the root path not requiring a leading '.'
+                const adjustedPath = path.startsWith('.') ? path.substring(1) : path;
+                result.push({ match: match[1], path: adjustedPath });
+            }
+        }
+    }
+
+    traverse(aslObj, '');
+
+    for (const sub of result) {
+        const value = jp.value(deployedDefinition, `\$.${sub.path}`);
+        jp.value(aslObj, sub.path, value);
+    }
+
+
+    return aslObj;
+}
+
 function findFirstTaskEnteredEvent(jsonData, state) {
-    console.log("state", state);
     for (const event of jsonData.events) {
         if (event.type.endsWith("StateEntered") && event.stateEnteredEventDetails.name === state) {
             return event;
@@ -196,7 +275,6 @@ function findStates(aslDefinition) {
             if (state.Type === 'Task' || state.Type === 'Pass' || state.Type === 'Choice') {
                 result.push({ key, state });
             }
-            // Recursively search in Parallel and Map structures
             if (state.Type === 'Parallel' && state.Branches) {
                 state.Branches.forEach(branch => {
                     traverseStates(branch.States);
@@ -207,7 +285,6 @@ function findStates(aslDefinition) {
             }
         });
     }
-
     traverseStates(aslDefinition.States);
     return result;
 }
