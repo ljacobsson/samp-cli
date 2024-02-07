@@ -9,6 +9,7 @@ const { fromSSO } = require('@aws-sdk/credential-provider-sso');
 const { CloudFormationClient, ListStackResourcesCommand } = require('@aws-sdk/client-cloudformation');
 const samConfigParser = require('../../shared/samConfigParser');
 const runtimeEnvFinder = require('../../shared/runtime-env-finder');
+const { template } = require('lodash');
 let env;
 function setEnvVars(cmd) {
   process.env.SAMP_PROFILE = cmd.profile || process.env.AWS_PROFILE || '';
@@ -64,7 +65,7 @@ async function run(cmd) {
     initialised = setupCDK_TS(initialised, cmd);
   }
   else if (env.iac === "sam" && env.functionLanguage == "ts") {
-    initialised = setupSAM_TS(initialised);
+    initialised = setupSAM_TS_esbuild(initialised);
   } else if (env.iac === "sam" && env.functionLanguage == "js") {
     setupSAM_JS();
   } else {
@@ -116,6 +117,58 @@ function setupSAM_TS(initialised) {
   return initialised;
 }
 
+function findTSFiles(dir, fileList = []) {
+  const files = fs.readdirSync(dir);
+
+  for (const file of files) {
+    const filePath = path.join(dir, file);
+    const stat = fs.statSync(filePath);
+
+    if (stat.isDirectory()) {
+      if (file !== 'node_modules') {
+        findTSFiles(filePath, fileList);
+      }
+    } else if (filePath.endsWith('.ts') || filePath.endsWith('.tsx')) {
+      fileList.push( filePath);
+    }
+  }
+
+  return fileList;
+}
+
+
+function setupSAM_TS_esbuild(initialised) {
+  process.env.outDir = ".samp-out";
+  let fileContent = fs.readFileSync("tsconfig.json", "utf8");
+  // remove // comments
+  fileContent = fileContent.replace(/\/\/.*/g, '');
+
+  copyFiles(process.cwd(), `${process.cwd()}/.samp-out`);
+  for (const file of findTSFiles("./")) {
+    const command = `esbuild ${file} --outdir=.samp-out/${file.split('/').slice(0, -1).join('/')} --watch --sourcemap --bundle --platform=node --out-extension:.js=.cjs`;
+    console.log("command: ", command);
+    const tscProcess = exec(command, {});
+    tscProcess.stdout.on('data', (data) => {
+      console.log("esbuild: ", data.toString().replace(/\n$/, ''));
+    }
+    );
+    tscProcess.stderr.on('data', (data) => {
+      console.log("esbuild: ", data.toString().replace(/\n$/, ''));
+    });
+  }
+
+  // tscProcess.stdout.on('data', (data) => {
+  //   console.log("tsc: ", data.toString().replace(/\n$/, ''));
+  if (!initialised) {
+    initialised = true;
+    const childProcess = exec(`${__dirname}/../../../node_modules/.bin/nodemon --ext js,cjs,mjs,json --ignore ./.samp-out/samp-requests/ --watch .samp-out ${__dirname}/runner.js run`, {});
+    childProcess.stdout.on('data', (data) => print(data));
+    childProcess.stderr.on('data', (data) => print(data));
+  }
+  //});
+  return initialised;
+}
+
 function setupCDK_TS(initialised, cmd) {
   process.env.outDir = ".samp-out";
   process.env.SAMP_TEMPLATE_PATH = ".samp-out/mock-template.yaml";
@@ -152,25 +205,26 @@ function setupCDK_TS(initialised, cmd) {
 }
 function copyFiles(source, destination) {
   // Ensure destination directory exists.
+  console.log("copying files from ", source, " to ", destination);
   if (!fs.existsSync(destination)) {
-      fs.mkdirSync(destination, { recursive: true });
+    fs.mkdirSync(destination, { recursive: true });
   }
 
   const items = fs.readdirSync(source);
 
   items.forEach(item => {
-      const itemPath = path.join(source, item);
-      const destPath = path.join(destination, item);
+    const itemPath = path.join(source, item);
+    const destPath = path.join(destination, item);
 
-      const stat = fs.statSync(itemPath);
+    const stat = fs.statSync(itemPath);
 
-      if (stat.isDirectory()) {
-          if (item !== 'node_modules' && item !== '.git' && item !== '.samp-out' && item !== "cdk.out") {
-              copyFiles(itemPath, destPath);
-          }
-      } else if (path.extname(itemPath) !== '.ts') {
-          fs.copyFileSync(itemPath, destPath);
+    if (stat.isDirectory()) {
+      if (item !== 'node_modules' && item !== '.git' && item !== '.samp-out' && item !== "cdk.out") {
+        copyFiles(itemPath, destPath);
       }
+    } else if (path.extname(itemPath) !== '.ts') {
+      fs.copyFileSync(itemPath, destPath);
+    }
   });
 }
 

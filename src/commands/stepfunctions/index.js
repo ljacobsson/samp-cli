@@ -12,6 +12,7 @@ program
   .option("-t, --template-file [templateFile]", "Path to SAM template file", "template.yaml")
   .option("-s, --stack-name [stackName]", "[Only applicable when syncing] The name of the deployed stack")
   .option("-p, --profile [profile]", "[Only applicable when syncing] AWS profile to use")
+  .option("-w, --watch", "[Only applicable for test-state] Watch for changes in the ASL file and test automatically")
   .option("--region [region]", "The AWS region to use. Falls back on AWS_REGION environment variable if not specified")
 
   .action(async (cmd, opts) => {

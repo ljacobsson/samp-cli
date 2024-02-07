@@ -12,9 +12,9 @@ const { Spinner } = require('cli-spinner');
 
 const os = require('os');
 let clientParams;
-async function run(cmd) {    
+async function run(cmd) {
     const config = await samConfigParser.parse();
-    
+
     if (!cmd.stackName && !config.stack_name) {
         console.log("No stack name found. Use --stack-name or set stack_name in samconfig.toml");
         process.exit(1);
@@ -24,13 +24,13 @@ async function run(cmd) {
         console.log("No region found. Use --region or set region in samconfig.toml");
         process.exit(1);
     }
-    
+
     let credentials;
     try {
-      credentials = await fromSSO({ profile: cmd.profile || config.profile || 'default' });
+        credentials = await fromSSO({ profile: cmd.profile || config.profile || 'default' });
     } catch (e) {
     }
-  
+
     clientParams = { credentials, region: cmd.region || config.region }
     const sfnClient = new SFNClient(clientParams);
     const cloudFormation = new CloudFormationClient(clientParams);
@@ -40,6 +40,8 @@ async function run(cmd) {
     const templateObj = parser.parse("template", templateContent);
     const stateMachines = findAllStateMachines(templateObj);
     const stateMachine = stateMachines.length === 1 ? stateMachines[0] : await inputUtil.list("Select state machine", stateMachines);
+
+    const definitionFile = templateObj.Resources[stateMachine].Properties.DefinitionUri;
 
     const spinner = new Spinner(`Fetching state machine ${stateMachine}... %s`);
     spinner.setSpinnerString(30);
@@ -61,6 +63,33 @@ async function run(cmd) {
 
     const accountId = (await sts.send(new GetCallerIdentityCommand({}))).Account;
     console.log(`Invoking state ${clc.green(state.name)} with input:\n${clc.green(input)}\n`);
+
+    if (cmd.watch) {
+        let revisionId;
+        let spinner;
+        do {
+            const stateMachine = await sfnClient.send(new DescribeStateMachineCommand({ stateMachineArn }));
+            if (revisionId !== stateMachine.revisionId) {
+                if (spinner)
+                    spinner.clearLine();
+                const definition = JSON.parse(stateMachine.definition);
+                const states = findStates(definition);
+                const updatedState = states.find(s => s.key === state.name);
+                console.log("StateMachine updated. Testing state...");
+                await testState(sfnClient, updatedState, accountId, stateMachineRoleName, input);
+                revisionId = stateMachine.revisionId;
+                spinner = new Spinner(`Waiting for changes... %s`);
+                spinner.setSpinnerString(28);
+                spinner.start();
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+        } while (true);
+    } else {
+        await testState(sfnClient, state, accountId, stateMachineRoleName, input);
+    }
+}
+
+async function testState(sfnClient, state, accountId, stateMachineRoleName, input) {
     const testResult = await sfnClient.send(new TestStateCommand(
         {
             definition: JSON.stringify(state.state),
@@ -74,7 +103,14 @@ async function run(cmd) {
         color = "red";
     }
     for (const key in testResult) {
-        console.log(`${clc[color](key.charAt(0).toUpperCase() + key.slice(1))}: ${testResult[key]}`);
+        let value;
+        try {
+            value = JSON.stringify(JSON.parse(testResult[key]), null, 2);
+        }
+        catch (e) {
+            value = testResult[key];
+        }
+        console.log(`\n${clc[color](key.charAt(0).toUpperCase() + key.slice(1))}: ${value}`);
     }
 }
 
@@ -87,7 +123,7 @@ async function getInput(stateMachineArn, state, stateMachineType) {
     if (stateMachineType === "STANDARD") {
         types.push("From recent execution");
     }
-    
+
     const configDirExists = fs.existsSync(path.join(os.homedir(), '.samp-cli', 'state-tests'));
     if (!configDirExists) {
         fs.mkdirSync(path.join(os.homedir(), '.samp-cli', 'state-tests'), { recursive: true });
@@ -189,7 +225,7 @@ function listAllStackResourcesWithPagination(cloudFormation, stackName) {
             await listStackResources(params);
         }
     };
-    
+
     return listStackResources(params).then(() => resources);
 }
 
