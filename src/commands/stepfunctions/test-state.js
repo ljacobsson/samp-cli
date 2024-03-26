@@ -59,7 +59,7 @@ async function run(cmd) {
     findAllDefinitionSubstitutions(definition, definitionObj);
 
     spinner.stop(true);
-    const states = findStates(definition);
+    const states = findStates(definitionObj);
     const state = await inputUtil.autocomplete("Select state", states.map(s => { return { name: s.key, value: { name: s.key, state: s.state } } }));
 
     const input = await getInput(stateMachineArn, state.name, describedStateMachine.type);
@@ -67,11 +67,16 @@ async function run(cmd) {
     const accountId = (await sts.send(new GetCallerIdentityCommand({}))).Account;
     console.log(`Invoking state ${clc.green(state.name)} with input:\n${clc.green(input)}\n`);
 
-    await testState(sfnClient, state, accountId, stateMachineRoleName, input);
+    try {
+        await testState(sfnClient, state, accountId, stateMachineRoleName, input);
+    } catch (e) {
+        console.log(clc.red(e.message));
+    }
     if (cmd.watch) {
         console.log("Watching for changes in definition file... Press Ctrl+C / Command+. to stop.");
 
         fs.watchFile(definitionFile, async () => {
+            console.log("-------------- Definition file changed. Updating state machine definition --------------");
             const fileContent = fs.readFileSync(definitionFile, 'utf8');
             try {
                 const definitionObj = parser.parse("asl", fileContent);
@@ -81,7 +86,7 @@ async function run(cmd) {
                 console.log("StateMachine updated. Testing state...");
                 await testState(sfnClient, updatedState, accountId, stateMachineRoleName, input);
             } catch (e) {
-                console.log("Error parsing definition file. Make sure it's valid JSON.\n", e.message);
+                console.log(clc.red(e.message));
             }
         });
     }
@@ -114,9 +119,10 @@ async function testState(sfnClient, state, accountId, stateMachineRoleName, inpu
             value = testResult[key];
         }
         let outputValue = value;
-        if (value.split('\n').length > 10 || value.length > 1000) {
-            outputValue = value.split('\n').slice(0, 10).join('\n') + "\n... (truncated - see output file for full result)";
+        if (value.length > 200) {
+            outputValue = value.substring(0, 500) + "\n... (truncated - see output file for full result)";
         }
+        
         console.log(`\n${clc[color](key.charAt(0).toUpperCase() + key.slice(1))}: ${outputValue}`);
         if (key === "output") {
             fs.writeFileSync("./samp-test-state-output.json", value);
