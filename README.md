@@ -215,7 +215,7 @@ Options:
 ```
 
 #### samp stepfunctions test-state
-Lets you interact with StepFunction's TestState API. Read more [here](https://docs.aws.amazon.com/step-functions/latest/dg/test-state-isolation.html) and [here](https://dev.to/aws-builders/take-stepfunctions-teststate-api-further-with-samp-cli-4f0i-temp-slug-3098209)
+Lets you interact with StepFunction's TestState API. Read more [here](https://docs.aws.amazon.com/step-functions/latest/dg/test-state-isolation.html) and [here](https://dev.to/aws-builders/take-stepfunctions-teststate-api-one-step-further-with-samp-cli-4klm)
 
 ### samp explore
 Lets you browse and explore your serverless patterns repositories. 
