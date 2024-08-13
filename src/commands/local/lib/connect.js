@@ -69,7 +69,7 @@ if (!fs.existsSync(".lambda-debug") || !certData) {
   const createKeysAndCertificate = async () => {
 
     const homeDir = os.homedir();
-    const certPath = path.join(homeDir, '.lambda-debug', `certificate-${accountId}.json`);
+    const certPath = path.join(homeDir, '.lambda-debug', `certificate-${accountId}-${targetConfig.region}.json`);
     let response;
     if (fs.existsSync(certPath)) {
       response = JSON.parse(fs.readFileSync(certPath));
@@ -87,7 +87,7 @@ if (!fs.existsSync(".lambda-debug") || !certData) {
   certData = await createKeysAndCertificate();
 
   const getIotEndpoint = async () => {
-    const cachePath = path.join(os.homedir(), ".lambda-debug", `endpoint-${accountId}.txt`);
+    const cachePath = path.join(os.homedir(), ".lambda-debug", `endpoint-${accountId}-${targetConfig.region}.txt`);
     if (fs.existsSync(cachePath)) {
       return fs.readFileSync(cachePath).toString(); q
     }
@@ -134,6 +134,7 @@ if (!fs.existsSync(".lambda-debug") || !certData) {
     }
   };
   const attachPolicy = async () => {
+    console.log("Attaching policy", certData);
     const attachPolicyCommand = new AttachPolicyCommand({
       policyName: policyName,
       target: certData.certificateArn

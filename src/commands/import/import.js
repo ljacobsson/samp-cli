@@ -7,6 +7,7 @@ const baseFile = require("../../shared/baseFile.json");
 const templateAnatomy = require("../../shared/templateAnatomy.json");
 const lambdaHandlerParser = require("../../shared/lambdaHandlerParser");
 const fs = require("fs");
+const path = require("path");
 const _ = require("lodash");
 const runtimes = require("../../shared/runtimes.json");
 const templateType = "SAM"; // to allow for more template frameworks
@@ -28,7 +29,33 @@ async function run(cmd) {
 
   const patterns = await githubUtil.getPatterns(cmd.sourceFilter);
 
+  const files = fs.readdirSync(path.join(__dirname, "/simple-resources"));
+
+  patterns.unshift(new Separator("Community patterns"));
+  for (const file of files.filter((p) => p.endsWith(".yaml"))) {
+    patterns.unshift({
+      name: file.replace(".yaml", ""),
+      value: {
+        basic: true,
+        name: file.replace(".yaml", "")
+      }
+    })
+  }
+  patterns.unshift(new Separator("Simple resources"));
+
+  console.log(JSON.stringify(patterns, null, 2));
+
   const pattern = await inputUtil.autocomplete("Select pattern", patterns);
+
+  if (pattern.basic) {
+    const snippet = fs.readFileSync(
+      path.join(__dirname, `/simple-resources/${pattern.name}.yaml`)
+    );
+    const snippetJson = { Resources: parser.parse("import", snippet) };
+    mergeWithExistingResource(ownTemplate, [], snippetJson);
+    return;
+  }
+
   let templateString;
   for (const fileName of pattern.setting.fileNames) {
     try {
@@ -159,7 +186,7 @@ async function handleStepFunctionsActions(template, block, name, pattern, aslFor
         template[block.section][name].Properties.DefinitionUri = definitionUri;
       }
     }
-  } 
+  }
 }
 
 async function importASL(

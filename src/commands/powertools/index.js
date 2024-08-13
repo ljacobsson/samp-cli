@@ -1,6 +1,5 @@
 const program = require("commander");
 const powertools = require("./powertools");
-const runtimeFinder = require('../../shared/runtime-env-finder');
 program
   .command("powertools")
   .alias("pt")
